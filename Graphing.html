@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Dynamic Graphing</title>
+	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+	<script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js></script>
+	
+	<style>
+		#graph {
+			background-color: white;
+		}
+		.debug {
+			background-color: red;
+		}
+		.btn-circle { 
+            width: 30px; 
+            height: 30px;
+            padding: 0px;
+            border-radius: 15px; 
+            font-size: 14px; 
+            text-align: center; 
+        } 
+
+	</style>
+</head>
+	<body>
+		<div id="content" class="container-fluid">
+			<div id="graphingNavBar" class="row no-gutters">
+				<div class="col-12">
+					<div class="nav nav-tabs" role="tablist">
+						<a class="nav-item nav-link active" id="nav-user-tab" data-toggle="tab" href="#nav-user" role="tab" aria-controls="nav-user" aria-selected="true">User</a>
+						<a class="nav-item nav-link" id="nav-dev-tab" data-toggle="tab" href="#nav-dev" role="tab" aria-controls="nav-dev" aria-selected="false">Developer</a>
+					</div>
+				</div>
+			</div>
+			<div class="tab-content">
+				
+				<div class="tab-pane fade show active" id="nav-user" role="tabpanel" aria-labelledby="nav-user-tab">
+					<div id="graphHeading" class="row no-gutters">
+		  				<div class="col-3">
+		  					<h3 class="display-4 text-center">Untitled</h3>
+		  				</div>
+						<div class="col-9 float-right">
+						 	<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;">-</button>
+							<button type="button" class="btn btn-outline-primary">Home</button>
+							<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;">+</button>
+			  			</div>
+			  		</div>
+					<div class="row no-gutters">
+		  				<div class="col-3 debug" >
+		  					
+		  				</div>
+						<div class="col-9">
+				  			<canvas id="graph"></canvas>
+			  			</div>
+			  		</div>
+	  			</div>
+				<div class="tab-pane fade" id="nav-dev" role="tabpanel" aria-labelledby="nav-dev-tab">
+					
+				</div>
+
+	  		</div>
+  		</div>
+	</body>
+	
+	<script type="text/javascript">
+
+		class Utils {
+			static isIterable(obj) {
+  				// checks for null and undefined
+				if (obj == null) {
+					return false;
+				}
+				return typeof obj[Symbol.iterator] === 'function';
+			}
+			static sleep(time) {
+				return new Promise((resolve, reject) => setTimeout(resolve, time));
+			}
+
+		}
+
+		class LinkedList {
+			constructor (elements=[]) {
+				this._startNode = null;
+				this._size = 0;
+				this._forward = true;
+				for (let elem of elements)
+					this.add(elem);
+			}
+
+			_link(firstNode, secondNode) {
+				firstNode._next = secondNode;
+				secondNode._prev = firstNode;
+			}
+
+			_prune(node) {
+				node._prev = null;
+				node._next = null;
+				return node._element;
+			}
+
+			addFirst(elem) {
+				let node = LinkedList._createNode(elem);
+				if (this._startNode === null) {
+					this._link(node, node);
+				} else if (this._forward) {
+					this._link(this._startNode._prev, node);
+					this._link(node, this._startNode);
+				} else {
+					this._link(node, this._startNode._next);
+					this._link(this._startNode, node);
+				}
+				this._startNode = node;
+				this._size ++;
+			}
+
+
+
+			removeFirst () {
+				if (this._startNode === null) 
+					return null;
+				let elem = null;
+				if (this._size === 1) {
+					elem = this._prune(this._startNode);
+					this._startNode = null;
+				} else {
+					let prevNode = this._startNode._prev;
+					let nextNode = this._startNode._next;
+					elem = this._prune(this._startNode);
+					this._link(prevNode, nextNode);
+					if (this._forward)
+						this._startNode = nextNode;
+					else
+						this._startNode = prevNode;
+				}
+				this._size -- ;
+				return elem;
+			}
+
+			_spinDir (index) {
+				let size = this._size;
+				if (!this._forward)
+					index = -index;
+				let actual = ((index % size) + size) % size;
+				let forward = actual < size / 2; 
+				let amount;
+				if (forward)
+					amount = actual;
+				else
+					amount = size - actual;
+
+				return [forward, amount];
+			}
+
+			spin(index) {
+				let size = this._size;
+				if (size === 0)
+					return 0;
+				const [forward, amount] = this._spinDir(index);
+				let currentNode = this._startNode;
+				if (forward)
+					for (let i of range(amount))
+						currentNode = currentNode._next;
+				else
+					for (let i of range(amount))
+						currentNode = currentNode._prev;
+				this._startNode = currentNode;
+				return amount != 0;
+			}
+
+			flip() {
+				this._forward = !this._forward;
+				this.spin(1);
+			}
+
+			addLast(elem) { 
+				this.flip();
+				this.addFirst(elem);
+				this.flip();
+			}
+
+
+			removeLast() { 
+				this.flip();
+				let elem = this.removeFirst();
+				this.flip();
+				return elem;
+			}
+
+
+			push(elem) {
+				this.addFirst(elem);
+			}
+
+			pop() { 
+				return this.removeFirst();
+			}
+
+			enqueue(elem) { 
+				this.addFirst(elem);
+			}
+
+			dequeue() {
+				return this.removeLast();
+			}
+
+
+			add(elem, index=null) {
+				if (index === null)
+					index = this._size;
+
+				let nextSize = this._size + 1;
+				index = ((index % nextSize) + nextSize) % (nextSize);
+
+				let startNode = this._startNode;
+				if (index !== this._size)
+					this.spin(index);
+
+				this.addFirst(elem);
+				if (startNode != null) 
+					this._startNode = startNode;
+			}
+
+
+			remove(index=null) {
+				if (index == null)
+					index = -1;
+				let startNode = this._startNode;
+				let moved = this.spin(index);
+				let elem = this.removeFirst();
+				if (moved)
+					this._startNode = startNode;
+				return elem;
+			}
+
+
+			clear() {
+				if (this._startNode != null)
+					this._prune(this._startNode);
+				this._startNode = null;
+				this._size = 0;
+			}
+
+			contains(value) {
+				for (let elem of this)   /// do this
+					if (elem === value)
+						return true;
+				return false;
+			}
+
+			set(index, elem) {
+				let startNode = this._startNode;
+				this.spin(index);
+				this._startNode._element = elem;
+				this._startNode = startNode;
+			}
+
+
+			get(index) {
+				let startNode = this._startNode;
+				this.spin(index);
+				let elem = this._startNode._element;
+				this._startNode = startNode;
+				return elem;
+			}
+
+			get length() { 
+				return this._size;
+			}
+
+			toString() { 
+					let _str = '(' + this._size + ')[';
+					let last = this.remove();
+
+					for (let elem of this) {
+						_str = _str + String(elem) + ', ';
+					}
+					if (last !== null) {
+						_str = _str + String(last);
+						this.add(last);
+					}
+					return _str + ']';
+			}
+
+			[Symbol.iterator]() {
+				let curIndex = this._size;
+				let node = this._startNode;
+				let direction = this._forward;
+				return {
+					next() {
+						if (curIndex <= 0)
+							return {done : true};
+						curIndex --;
+						let elem = null;
+
+						if (node !== null) {
+							elem = node._element;
+							if (direction)
+								node = node._next;
+							else
+								node = node._prev;
+						}
+						return {done : false, value : elem};
+					}
+				};
+			}
+
+			static _createNode(value, previous=null, next=null) {
+				return {
+					_element : value,
+					_prev : previous,
+					_next : next,
+				}
+			}
+
+		}
+
+		class Matrix {
+			static spread(arr) {
+				if (arr.length != 1)
+					return arr;
+				if (arr[0] instanceof Array)
+					return arr[0];
+				else
+					return arr;
+			}
+
+			constructor(rows=-1, columns=-1, ...elements) {
+
+				elements = Matrix.spread(elements);
+				if (elements.length === 0) {
+					if (rows === -1) {
+						if (columns === -1)
+							throw "Must Specify Dimensions";
+						rows = 1;
+					} else if (columns === -1) {
+						columns = 1;
+					}
+					elements = new Array(rows * columns).fill(0);
+				} else {
+					if (columns === -1) {
+						if (rows === -1) {
+							rows = elements.length;
+							columns = 1;
+						} else {
+							columns = Math.round(elements.length / rows); 
+						}
+					} else if (rows === -1) {
+						rows = Math.round(elements.length / columns);
+					}
+				}
+				this._elements = elements;
+				this.rows = rows;
+				this.columns = columns;
+			}
+
+			get(row, column) {
+				return this._elements[row * this.columns + column];
+			}
+
+			set(element, row, column) {
+				this._elements[row * this.columns + column] = element;
+			}
+
+			bulkGet(row, column) {
+				if (Utils.isIterable(row) || Utils.isIterable(column)) {
+					let rows = null;
+					let columns = null;
+					if (! Utils.isIterable(row)) {
+						rows = [row];
+						if (! Arrays.isArray(column))
+							columns = new LinkedList(column);
+					} else if (! Utils.isIterable(column)) {
+						if (! Arrays.isArray(rows))
+							rows = new LinkedList(row);
+						columns = [column];
+					}
+
+					let output = new Array(rows.length);
+					let r = 0;
+					for (let row of rows) {
+						let columnArray = new Array(columns.length);
+						let c = 0;
+						for (let column of columns)
+							columnArray[c++] = this.get(row, column);
+						output[r++] = columnArray;
+					}
+					return output;
+				} else {
+					return this.get(row, column);
+				}
+			}
+
+			bulkSet(row, column) {
+				if (Utils.isIterable(row) || Utils.isIterable(column)) {
+					let rows = null;
+					let columns = null;
+					if (! Utils.isIterable(row)) {
+						rows = [row];
+						if (! Arrays.isArray(columns))
+							columns = new LinkedList(column);
+					} else if (! Utils.isIterable(column)) {
+						if (! Arrays.isArray(rows))
+							rows = new LinkedList(row);
+						columns = [column];
+					}
+					
+					if (! Utils.isIterable(element)) {
+						for (let row of rows)
+							for (let column of columns)
+								this.set(element, row, column);
+						return output;
+					} else {
+						let elems = new LinkedList(element);
+						if (Utils.isIterable(elems.get(0))) {
+							for (let row of rows) {
+								let colElems = new LinkedList(elems.get(0));
+								for (let column of columns) {
+									this.set(colElems.get(0), row, column);
+									colElems.spin(1);
+								}
+								elems.spin(1);
+							}
+						} else {
+							for (let row of rows) {
+								for (let column of columns) {
+									this.set(elems.get(0), row, column);
+									elems.spin(1);
+								}
+							}	
+						}
+					}
+				} else {
+					this.set(row, column);
+				}
+			}
+
+			subMat(rows, columns) {
+				return matrix(this.bulkGet(rows, columns));
+			}
+
+
+
+			add(...values) {
+				values = Matrix.spread(values);
+				let shift = 0;
+				let currentMatrix = this;
+				for (let value of values)
+					if (typeof value === "number")
+						shift += value;
+					else
+						currentMatrix = currentMatrix._add(value);
+				if (shift !== 0)
+					currentMatrix = currentMatrix._shift(shift);
+				return currentMatrix;
+			}
+
+			mult(elem=false, ...values) {
+				values = Matrix.spread(values);
+				if (elem)
+					return this.multiply(values);
+				else
+					return this.matmul(values);
+			}
+
+			matmul(...values) {
+				values = Matrix.spread(values);
+				let scale = 1;
+				let currentMatrix = this;
+				for (let value of values)
+					if (typeof value === "number")
+						scale *= value;
+					else
+						currentMatrix = currentMatrix._matmul(value);
+				if (scale !== 1)
+					currentMatrix = currentMatrix._scale(scale);
+				return currentMatrix;
+			}
+
+			multiply(...values) {
+				values = Matrix.spread(values);
+				let scale = 1;
+				let currentMatrix = this;
+				for (let value of values)
+					if (typeof value === "number")
+						scale *= value;
+					else
+						currentMatrix = currentMatrix._multiply(value);
+				if (scale !== 1)
+					currentMatrix = currentMatrix._scale(scale);
+				return currentMatrix;
+			}
+
+			_shift(value) {
+				let newMatrix = new Matrix(this.rows, this.columns);
+				for (let r = 0; r < this.rows; r++)
+					for (let c = 0; c < this.columns; c++)
+						newMatrix.set(this.get(r, c)+value, r, c);
+				return newMatrix;
+			}
+
+			_add(matrix) {
+				let newMatrix = new Matrix(this.rows, this.columns);
+				for (let r = 0; r < this.rows; r++)
+					for (let c = 0; c < this.columns; c++)
+						newMatrix.set(this.get(r, c)+matrix.get(r, c), r, c);
+				return newMatrix;
+			}
+
+
+			_scale(value) {
+				let newMatrix = new Matrix(this.rows, this.columns);
+				for (let r = 0; r < this.rows; r++)
+					for (let c = 0; c < this.columns; c++)
+						newMatrix.set(this.get(r, c)*value, r, c);
+				return newMatrix;
+			}
+
+			_mult(matrix, elem=false) {
+				if (elem)
+					return this._multiply(matrix);
+				else
+					return this._matmul(matrix);
+			}
+
+			_multiply(matrix) {
+				let newMatrix = new Matrix(this.rows, this.columns);
+				for (let r = 0; r < this.rows; r++)
+					for (let c = 0; c < this.columns; c++)
+						newMatrix.set(this.get(r, c)*matrix.get(r, c), r, c);
+				return newMatrix;
+			}
+
+			_matmul(matrix) {
+				let newMatrix = new Matrix(this.rows, matrix.columns);
+				for (let r = 0; r < this.rows; r++)
+					for (let c = 0; c < matrix.columns; c++){
+						let sum = 0;
+						for (let k = 0; k < this.columns; k++)
+							sum += this.get(r, k) * matrix.get(k, c);
+						newMatrix.set(sum, r, c);
+					}
+				return newMatrix;
+			}
+
+			toString() {
+				let colStrSize = new Array(this.columns);
+				for (let c = 0 ; c < this.columns; c ++) {
+					let largestSize = 1;
+					for (let r = 0 ; r < this.rows; r ++) {
+						let str = this.get(r, c).toString();
+						let currentSize = str.length;
+						if (currentSize > largestSize)
+							largestSize = currentSize;
+					}
+					colStrSize[c] = largestSize;
+				}
+				let finalStr = "";
+				for (let r = 0; r < this.rows; r ++) {
+					finalStr += "| "
+					for (let c = 0; c < this.columns; c ++) {
+						let str = this.get(r, c).toString();
+						for (let i = str.length; i < colStrSize[c]; i++)
+							finalStr += " ";
+						finalStr += str + " ";
+					}
+					finalStr += "|\n";
+				}
+				return finalStr;
+			}
+
+			get size() {
+				return this._elements.length;
+			}
+
+			get t() {
+				let newMatrix = new Matrix(this.columns, this.rows);
+				for (let r = 0; r < this.rows; r++)
+					for (let c = 0; c < this.columns; c++)
+						newMatrix.set(this.get(r, c), c, r);
+				return newMatrix;
+			}
+
+			get h() {
+				let newMatrix = new Matrix(this.rows + 1, this.columns + 1);
+				for (let r = 0; r < this.rows; r++)
+					for (let c = 0; c < this.columns; c++)
+						newMatrix.set(this.get(r, c), r, c);
+				newMatrix.set(1, this.rows, this.columns);
+				return newMatrix;
+			}
+
+			get hv() {
+				let newMatrix = new Matrix(this.rows + 1, this.columns);
+				for (let r = 0; r < this.rows; r++)
+					for (let c = 0; c < this.columns; c++)
+						newMatrix.set(this.get(r, c), r, c);
+				for (let c = 0; c < this.columns; c++)
+					newMatrix.set(1, this.rows, c);
+				return newMatrix;
+			}
+		}
+
+		function* range(arg1, arg2=null, delta=1) {
+			let start;
+			let end;
+			if (arg2 === null) {
+				start = 0;
+				end	  = arg1;
+			} else {
+				start = arg1;
+				end = arg2;
+			}
+			for (let i = start; i < end; i += delta)
+				yield i;
+		}
+
+		function matrix  (doubleArray) {
+			if (doubleArray instanceof Matrix)
+				return doubleArray;
+			let rows = doubleArray.length;
+			let columns = doubleArray[0].length;
+			let singleArray = new Array(rows * columns);
+			for (let r = 0; r < rows; r++)
+				for (let c = 0; c < columns; c++)
+					singleArray[r * columns + c] = doubleArray[r][c];
+			return new Matrix(rows, columns, singleArray);
+		}
+
+		function vector (...values) {
+			values = Matrix.spread(values);
+			return new Matrix(values.length, 1, values);
+		}
+
+		function splitValues (valueArr) {
+			valueArr = Matrix.spread(valueArr);
+			for (let i = 0; i < valueArr.length; i++) {
+				let value = valueArr[i];
+				if (value instanceof Matrix) {
+					let matrix = value;
+					valueArr.splice(i, 1);
+					return [matrix, valueArr];
+				}
+			}
+			throw "Could Not Find Matrix";
+		}
+
+		function mult (...values) {
+			const [matrix, valuesM] = splitValues(values);
+			return matrix.matmul(valuesM);
+		}
+
+		function multiply (...values) {
+			const [matrix, valuesM] = splitValues(values);
+			return matrix.multiply(valuesM);
+		}
+
+		function add (...values) {
+			const [matrix, valuesM] = splitValues(values);
+			return matrix.add(valuesM);
+		}
+
+		function magnitude (matrix, axis=0) {
+			if (axis === 0) {
+				let output = new Matrix(1, matrix.columns);
+				for (let c = 0; c < matrix.columns; c++) {
+					let sum = 0;
+					for (let r = 0; r < matrix.rows; r++)
+						sum += matrix.get(r, c);
+					output.set(Math.sqrt(sum), 1, c);
+				}
+				return output;
+			} else {
+				let output = new Matrix(matrix.rows, 1);
+				for (let r = 0; r < matrix.rows; r++) {
+					let sum = 0;
+					for (let c = 0; r < matrix.columns; c++);
+						sum += matrix.get(r, c);
+					output.set(Math.sqrt(sum), r, 1);
+				}
+				return output;
+			}
+		}
+
+		function normalize (matrix, axis=0) {
+			let output = new Matrix(matrix.rows, matrix.columns) ;
+			let mags = magnitude(matrix, axis) ;
+			if (axis === 0) {
+				for (let r = 0; r < matrix.rows; r++)
+					for (let c = 0; c < matrix.columns; c++)
+						output.set(matrix.get(r, c) / mags.get(1, c)) ;
+			} else {
+				for (let r = 0; r < matrix.rows; r++)
+					for (let c = 0; c < matrix.columns; c++)
+						output.set(matrix.get(r, c) / mags.get(r, 1)) ;
+			}
+			return output ;
+		}
+
+		function create3DR (theta, axis) {
+			// axis = normalize(axis);
+			let ux = axis[0];
+			let uy = axis[1];
+			let uz = axis[2];
+			let cos = Math.cos(theta);
+			let sin = Math.sin(theta);
+			return new Matrix(4, 4,
+				cos + ux ** 2 * (1 - cos),   ux * uy * (1 - cos) - uz * sin,   ux * uz * (1 - cos) + uy * sin, 0,
+				uy * ux * (1 - cos) + uz * sin,   cos + uy ** 2 * (1 - cos),   uy * uz * (1 - cos) - ux * sin, 0,
+				uz * ux * (1 - cos) - uy * sin,   uz * uy * (1 - cos) + ux * sin,   cos + uz ** 2 * (1-cos),   0,
+				0,								  0,													  0,   1
+			);
+		}
+
+		function createEulerR (pitch, yaw, roll) {
+			let pitchM = create3DR (pitch, [1, 0, 0]);
+			let yawM = create3DR (yaw, [0, 1, 0]);
+			let rollM = create3DR (roll, [0, 0, 1]);
+			return mult(rollM, yawM, pitchM);			
+		}
+
+		function create2DR (theta) {
+			let cos = Math.cos(theta);
+			let sin = Math.sin(theta);
+
+			return new Matrix(3, 3, 
+				cos, -sin, 0,
+				sin, cos,  0,
+				0,	   0,  1);
+		}
+
+		function createD (...entries) {
+			entries = Matrix.spread(entries);
+			let size = entries.length;
+			let output = new Matrix(size, size);
+			for(let i = 0; i < size; i++)
+				output.set(entries[i], i, i);
+			return output;
+		}
+
+		function createI (size) {
+			let output = new Matrix(size, size);
+			for (let i = 0; i < size; i ++)
+				output.set(1, i, i);
+			return output;
+		}
+
+		function createT (...entries) {
+			entries = Matrix.spread(entries);
+			let size = entries.length;
+
+			let output = createI(size + 1);
+			for(let i = 0; i < size; i++)
+				output.set(entries[i], i, size);
+			return output;
+		}
+
+		function createPers (fov, near, far) {
+			let s = 1 / Math.tan(fov/2)
+			let c1 = - (far + near) / (far - near)
+			let c2 = - 2 * far * near / (far - near)
+			return new Matrix(4, 4,
+					s, 0,  0,  0,
+					0, s,  0,  0,
+					0, 0, c1, c2,
+					0, 0, -1,  0, 
+				);
+		}
+
+		function createOrtho (left, top, right, bottom, near, far) {
+			let xs = right - left
+			let xa = right + left
+			let ys = top - bottom
+			let ya = top + bottom
+			let zs = far - near
+			let za = far + near
+			return new Matrix(4, 4,
+					2/xs,    0,     0,  -xa/xs,
+					0,    2/ys,     0,  -ya/ys,
+					0,       0, -2/zs,  -za/zs,
+					0,       0,     0,       1, 
+				);
+		}
+
+		function createOffsetMatrix (width, height) {
+			return new Matrix(3, 3, 
+				 1,  0, width / 2 , 
+				 0,  - 1, height / 2 , 
+				 0,  0,   1);
+		}
+
+	</script>
+
+
+	<script type="text/javascript">
+		class CanvasGraph {
+			static canvas  = document.getElementById("graph");
+			static graph2D = CanvasGraph.canvas.getContext("2d");
+			static UPDATE_WAIT_TIME = 50;
+
+			static zoomX  =  0;
+			static zoomY  =  0;
+			static xOffset = 0;
+			static yOffset = 0;
+			static offsetMatrix = new Matrix(3, 3);
+			static scaleMatrix  = new Matrix(3, 3);
+			static transMatrix  = new Matrix(3, 3);
+			static onRender = null;
+			static pointsAtHome = 10;
+			static zoomHome = [1, 1];
+			static rerender = false;
+			static _isInit = false;
+
+			static setHome() {
+				CanvasGraph.zoomX =  CanvasGraph.zoomHome[0];
+				CanvasGraph.zoomY =  CanvasGraph.zoomHome[1];
+				CanvasGraph.xOffset = 0;
+				CanvasGraph.yOffset = 0;
+				CanvasGraph.rerender = true;	
+			}
+
+			static init(onRender = null) {
+				if (CanvasGraph._isInit)
+					throw "Canvas graph is already initialized"
+				CanvasGraph._isInit = true;
+
+				CanvasGraph.setOnRender(onRender);
+
+				window.onresize = CanvasGraph.updateCanvasSize;
+				CanvasGraph.setTranslate(0, 0);
+				CanvasGraph.setZoom(CanvasGraph.zoomHome[0], CanvasGraph.zoomHome[1]);
+				CanvasGraph.updateCanvasSize();
+				CanvasGraph.paint();
+				CanvasGraph.rerender = false;
+
+				let loop = async function () {
+					while (true) {
+						if (CanvasGraph.rerender) {
+							CanvasGraph.rerender = false;
+							CanvasGraph.paint();
+						}
+						await Utils.sleep(CanvasGraph.UPDATE_WAIT_TIME);
+					}
+				};
+				loop();
+			}
+
+			static setOnRender(onRender) {
+				if (onRender === null)
+					onRender = () => {};
+				else 
+					CanvasGraph.onRender = onRender;
+				CanvasGraph.render();
+			}
+
+			static render() {
+				CanvasGraph.rerender = true;				
+			}
+
+			static paint() {
+				CanvasGraph.clearCanvas();
+				if (CanvasGraph.onRender !== null)
+					CanvasGraph.onRender();
+			}
+
+			static clearCanvas() {
+				CanvasGraph.graph2D.clearRect(0, 0, CanvasGraph.canvas.width, CanvasGraph.canvas.height);
+			}
+
+			static setTranslate(newX, newY) {
+				CanvasGraph.xOffset = newX;
+				CanvasGraph.yOffset = newY;
+				CanvasGraph.transMatrix = createT(newX, newY);
+				CanvasGraph.render();
+			}
+
+			static setZoom(newZoomX, newZoomY) {
+				CanvasGraph.zoomX = newZoomX;
+				CanvasGraph.zoomY = newZoomY;
+				CanvasGraph.scaleMatrix = createD(CanvasGraph.zoomX, CanvasGraph.zoomY, 1);
+				CanvasGraph.render();
+			}
+			
+			static measureCanvasSpace() {
+				let innerHeight = window.innerHeight;
+				let nav = document.getElementById("graphingNavBar");
+				let graphHeading = document.getElementById("graphHeading");
+				
+				let navHeight = nav.offsetHeight;
+				let graphHeadingHeight = graphHeading.offsetHeight;
+				let width = CanvasGraph.canvas.parentElement.offsetWidth;
+				return [width, innerHeight - navHeight - graphHeadingHeight];
+			}
+
+			static updateCanvasSize() {
+				let [width, height] = CanvasGraph.measureCanvasSpace();
+				let smallerLength = width < height ? width : height ;
+
+				let homePoints = CanvasGraph.pointsAtHome;
+
+				CanvasGraph.canvas.width = width;
+				CanvasGraph.canvas.height = height;
+				let scaleHomeMat = createD(smallerLength / homePoints, smallerLength / homePoints, 1);
+				let offsetMatrix = createOffsetMatrix(width, height);
+
+				CanvasGraph.offsetMatrix = mult(offsetMatrix, scaleHomeMat);
+				CanvasGraph.render();
+			}
+
+			static getTransform() {
+				return mult(CanvasGraph.offsetMatrix, CanvasGraph.scaleMatrix, CanvasGraph.transMatrix);
+			}
+
+			static setColor(fill, stroke=fill) {
+				let graph2D = CanvasGraph.graph2D;
+				graph2D.fillStyle = fill;
+				graph2D.strokeStyle = stroke;
+			}
+
+			static plotPoint(x, y, radius=5) {
+				let graph2D = CanvasGraph.graph2D;
+				graph2D.beginPath();
+				graph2D.arc(x, y, radius, 0, 2 * Math.PI);
+				graph2D.closePath();
+				graph2D.fill();
+				graph2D.stroke();
+			}
+
+			static getPointArgs(args=null) {
+				let pointArgs = {
+					showPoints:true,
+					pointColor:"black",
+					pointRadius: 5,
+					showLines:false,
+					lineColor:"black",
+					lineDash:[],
+					lineWidth:1
+				}
+
+				for (let key in args) {
+				    if (pointArgs.hasOwnProperty(key))
+						pointArgs[key] = args[key];
+					else
+						throw 'The arg "' + key + '" is not defined.';
+				}
+
+				return pointArgs;
+			}
+
+
+
+			static plotPoints(pointMatrix, args) {
+				let transform = CanvasGraph.getTransform();
+				pointMatrix = mult(transform, pointMatrix);
+
+				let pointArgs = CanvasGraph.getPointArgs(args);
+
+				if (pointArgs.showLines && pointMatrix.columns > 1) {
+					CanvasGraph.setColor(pointArgs.lineColor);
+
+					let graph2D = CanvasGraph.graph2D;
+					graph2D.setLineDash(pointArgs.lineDash);
+					graph2D.lineWidth = pointArgs.lineWidth;
+					graph2D.moveTo(pointMatrix.get(0, 0),pointMatrix.get(1, 0));
+					graph2D.beginPath();
+					for (let i = 1; i < pointMatrix.columns; i++)
+						graph2D.lineTo(pointMatrix.get(0, i),pointMatrix.get(1, i));
+					graph2D.lineTo(pointMatrix.get(0, 0),pointMatrix.get(1, 0));
+					graph2D.closePath();
+					graph2D.stroke();
+					graph2D.setLineDash([]);
+					graph2D.lineWidth = 1;
+				}
+
+				if (pointArgs.showPoints) {
+					CanvasGraph.setColor(pointArgs.pointColor);
+					let radius = pointArgs.pointRadius;
+					for (let i = 0; i < pointMatrix.columns; i++)
+						CanvasGraph.plotPoint(pointMatrix.get(0, i), pointMatrix.get(1, i), radius);
+				}
+			}
+		}
+
+		class Figure {
+			
+			static get2DPointMatrix(xArr, yArr) {
+				let output = null;
+				if (typeof (xArr) === "number")
+					xArr = [xArr];
+				if (typeof (yArr) === "number")
+					yArr = [yArr];
+
+				if (yArr === null)
+					output = matrix(xArr);
+				else
+					output = matrix([xArr, yArr]);
+				
+				let rows = output.rows;
+				if (rows >= 3) {
+					let cols = output.columns;
+					output = output.subMat(range(2), range(cols));
+				}
+				output = output.hv;
+				return output;
+			}
+
+			static get3DPointMatrix(xArr, yArr, zArr) {
+				let output = null;
+				if (typeof (xArr) === "number")
+					xArr = [xArr];
+				if (typeof (yArr) === "number")
+					yArr = [yArr];
+				if (typeof (zArr) === "number")
+					zArr = [zArr];
+				
+				if (yArr === null)
+					output = matrix(xArr);
+				else
+					output = matrix([xArr, yArr, zArr]);
+
+				let rows = output.rows;
+				if (rows >= 4) {
+					let cols = output.columns;
+					output = output.subMat(range(3), range(cols));
+				}
+				output = output.hv;
+				return output;
+			}
+
+			constructor(args={}) {
+				this.args = {
+					t:[0, 0],
+					s:[1, 1],
+					r: 0,
+					or:[Math.PI/3, Math.PI/3, 0],
+					ct:[-1,-1, -1],
+					is3D:false,
+					pers:true,
+					box:[-1, 1, 1, -1, -1, 1],
+					fov:Math.PI/2,
+				};
+				this._setFigureArgs(args);
+			}
+
+			_setFigureArgs(args) {
+				for (let key in args) {
+				    if (this.args.hasOwnProperty(key))
+						this.args[key] = args[key];
+					else 
+						throw 'The arg "' + key + '" is not defined.';
+				}
+				if (this.args.is3D) {
+					let projection = null;
+					let box = this.args.box;
+					if (this.args.pers)
+						projection = createPers (this.args.fov, box[4], box[5]);
+					else
+						projection = createOrtho (box[0], box[1], box[2], box[3], box[4], box[5]);
+					let s = this.args.s;
+					let scale = createD(s[0], s[1], 1, 1);
+					let t = this.args.t;
+					let translate = createT(t[0], t[1], 0);
+					let r = this.args.r;
+					let rotate = create2DR(r).h;
+
+					let ct = this.args.ct;
+					let cameraTranslate = createT(ct[0], ct[1], ct[2]);
+					
+					let or = this.args.or;
+					let originRotate = createEulerR (or[0], or[1], or[2]);
+					
+					this.transform = mult(translate, rotate, scale, projection, cameraTranslate, originRotate);
+				} else {
+					let s = this.args.s;
+					let scale = createD(s[0], s[1], 1);
+					let t = this.args.t;
+					let translate = createT(t[0], t[1]);
+					let r = this.args.r;
+					let rotate = create2DR(r);
+
+					this.transform = mult(translate, rotate, scale);
+				}
+				CanvasGraph.render();
+			}
+
+
+			plotXY(x, y=null, args={}) {
+				if (this.args.is3D)
+					throw "Cannot plot 2D points on a 3D figure";
+
+				let pointMatrix = Figure.get2DPointMatrix(x, y);
+				pointMatrix = mult(this.transform, pointMatrix);
+				CanvasGraph.plotPoints(pointMatrix, args);
+			}
+
+			plotXYZ(x, y=null, z=null, args={}) {
+				if (!this.args.is3D)
+					throw "Cannot plot 3D points on a 2D figure";
+				let pointMatrix = Figure.get3DPointMatrix(x, y, z);
+				pointMatrix = mult(this.transform, pointMatrix);
+				CanvasGraph.plotPoints(pointMatrix, args);
+			}
+		}
+
+	</script>
+
+	<script type="text/javascript">
+
+		function myRender() {
+			// figure1 = new Figure({is3D : false, s : [.25, .25], t : [3, 3]});	
+			// figure1.plotXY([-1, 1], [-1, 1]);
+			figure2 = new Figure({is3D : true, s : [1, 1], t : [0, 0]});
+			figure2.plotXYZ([1, 0, 0], [0, 1, 0], [0, 0, 1], {showLines:true, lineColor: "red", lineDash: [1, 2], lineWidth: 3});
+		}
+
+		CanvasGraph.init(myRender);
+
+	</script>
+</html>
