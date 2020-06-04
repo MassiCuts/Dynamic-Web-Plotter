@@ -4,8 +4,8 @@
 	<title>Dynamic Graphing</title>
 	<meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
-
+	
+	<!-- Bootstrap -->
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
 	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
@@ -14,6 +14,15 @@
 	<script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js></script>
 	
 	<style>
+		#editor { 
+	        /*position: absolute;
+	        top: 0;
+	        right: 0;
+	        bottom: 0;
+	        left: 0;*/
+	        width: 100%;
+	        height: 100%;
+	    }
 		#graph {
 			background-color: white;
 		}
@@ -48,10 +57,12 @@
 		  				<div class="col-3">
 		  					<h3 class="display-4 text-center">Untitled</h3>
 		  				</div>
-						<div class="col-9 float-right">
-						 	<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;">-</button>
-							<button type="button" class="btn btn-outline-primary">Home</button>
-							<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;">+</button>
+						<div class="col-9">
+							<div class="float-right" style="margin: 10px 0 0 0">
+					 			<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;" onclick="zoomOut();">-</button>
+								<button type="button" class="btn btn-outline-primary" onclick="zoomHome();">Home</button>
+								<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;" onclick="zoomIn();">+</button>
+							</div>
 			  			</div>
 			  		</div>
 					<div class="row no-gutters">
@@ -64,7 +75,6 @@
 			  		</div>
 	  			</div>
 				<div class="tab-pane fade" id="nav-dev" role="tabpanel" aria-labelledby="nav-dev-tab">
-					
 				</div>
 
 	  		</div>
@@ -277,17 +287,17 @@
 			}
 
 			toString() { 
-					let _str = '(' + this._size + ')[';
-					let last = this.remove();
+				let _str = '(' + this._size + ')[';
+				let last = this.remove();
 
-					for (let elem of this) {
-						_str = _str + String(elem) + ', ';
-					}
-					if (last !== null) {
-						_str = _str + String(last);
-						this.add(last);
-					}
-					return _str + ']';
+				for (let elem of this) {
+					_str = _str + String(elem) + ', ';
+				}
+				if (last !== null) {
+					_str = _str + String(last);
+					this.add(last);
+				}
+				return _str + ']';
 			}
 
 			[Symbol.iterator]() {
@@ -727,6 +737,13 @@
 			return mult(rollM, yawM, pitchM);			
 		}
 
+		function createInverseEulerR(pitch, yaw, roll) {
+			let pitchM = create3DR (-pitch, [1, 0, 0]);
+			let yawM = create3DR (-yaw, [0, 1, 0]);
+			let rollM = create3DR (-roll, [0, 0, 1]);
+			return mult(pitchM, yawM, rollM);
+		}
+
 		function create2DR (theta) {
 			let cos = Math.cos(theta);
 			let sin = Math.sin(theta);
@@ -797,78 +814,319 @@
 				 0,  0,   1);
 		}
 
+		function createInverseOffsetMatrix(width, height) {
+			return new Matrix(3, 3, 
+				 1,  0, - width / 2 , 
+				 0,  - 1, height / 2 , 
+				 0,  0,   1);	
+		}
+
 	</script>
 
 
 	<script type="text/javascript">
+		class MouseHandler {
+			constructor(checkInBounds=null, onMove=null, onDown=null, onUp=null) {
+				if ( checkInBounds !== null )
+					this.checkInBounds = checkInBounds;
+				if ( onMove !== null )
+					this.onMove = onMove;
+				if ( onUp !== null )
+					this.onUp = onUp;
+				if ( onDown !== null )
+					this.onDown = onDown;
+			}
+			checkInBounds(x, y) {}
+			onMove(x, y){}
+			onUp(x, y){}
+			onDown(x, y){}
+		}
+
+		class CanvasMouseHandler {
+			constructor(canvas, defaultMoveHandler) {
+				this.canvas = canvas;
+
+				this.mouseHandlerList = new LinkedList();
+				this.defaultMoveHandler = defaultMoveHandler;
+				
+				this.mouseDown = false;
+				this.selectedHandler = defaultMoveHandler;
+
+				let obj = this;
+
+				canvas.addEventListener("mousemove", function (e) {
+		            let rect = canvas.getBoundingClientRect();
+		            obj.move(e.clientX - rect.left, e.clientY - rect.top);
+		        }, false);
+		        canvas.addEventListener("mousedown", function (e) {
+		            let rect = canvas.getBoundingClientRect();
+		            obj.down(e.clientX - rect.left, e.clientY - rect.top);
+		        }, false);
+		        canvas.addEventListener("mouseup", function (e) {
+		            let rect = canvas.getBoundingClientRect();
+		            obj.up(e.clientX - rect.left, e.clientY - rect.top);
+		        }, false);
+		        canvas.addEventListener("mouseout", function (e) {
+		            let rect = canvas.getBoundingClientRect();
+		            obj.up(e.clientX - rect.left, e.clientY - rect.top);
+		        }, false);
+			}
+
+			get mouseHandlers() {
+				return this.mouseHandlerList;
+			}
+
+			move (x, y) {
+				if (this.mouseDown)
+					this.selectedHandler.onMove(x, y);	
+			}
+
+			down (x, y) {
+				this.mouseDown = true;
+				for (let m_obj of this.mouseHandlerList) {
+					if (m_obj.checkInBounds(x, y)) {
+						this.selectedHandler = m_obj;
+						m_obj.onDown(x, y);
+						return;
+					}
+				}
+				this.selectedHandler = this.defaultMoveHandler;
+				this.defaultMoveHandler.onDown(x, y);
+			}
+
+			up (x, y) {
+				if (this.mouseDown)
+					this.selectedHandler.onUp(x, y);
+				this.mouseDown = false;
+
+			}
+		}
+
+		class Control extends MouseHandler {
+			static CONTROL_RADIUS = 10;
+			static allControls = null;
+			static plottableControls = new LinkedList(); 
+
+			static __resetControls() {
+				Control.allControls = {};
+				Control.plottableControls.clear();				
+				CanvasGraph.mouseHandler.mouseHandlerList.clear();
+				CanvasGraph.update();
+			}
+
+			static __addControl(key, content, plottable=false) {
+				if (plottable) {
+					let [pointMatrix, figure, args] = content;
+					if ( !(key in Control.allControls) ) {
+						let control = new Control(pointMatrix, figure, args);
+						Control.plottableControls.add(control);
+						CanvasGraph.mouseHandler.mouseHandlerList.add(control);
+						Control.allControls[key] = control.pointList;
+					}
+				} else {
+					Control.allControls[key] = content;
+				}
+			}
+
+			static get(key) {
+				return Control.allControls[key];
+			}
+
+			static __plotControls(graphTransform) {
+				for (let control of Control.plottableControls) {
+					let [pointMatrix, figure, args] = control.contents;
+					pointMatrix = mult(figure.transform, pointMatrix);
+					CanvasGraph.plotPoints(pointMatrix, args, graphTransform);
+				}
+			}
+
+			static __toPointList(pointMatrix) {
+				let n = pointMatrix.columns;
+				let x_list = new Array(n);
+				let y_list = new Array(n);
+				for (let i of range(n)) {
+					x_list[i] = pointMatrix.get(0, i);
+					y_list[i] = pointMatrix.get(1, i);
+				}
+				return [x_list, y_list];
+			}
+
+			get pointMatrix () {
+				return matrix(this.pointList).hv;
+			}
+
+			constructor (pointMatrix, figure, args) {
+				super();
+				this.pointList = Control.__toPointList(pointMatrix);
+				this.figure = figure;
+				this.args = args;
+				this.selectedPoint = -1;
+			}
+
+			getTransformedPoints(x, y) {
+				let touchP = vector(x, y, 1);
+				let graphTransform = CanvasGraph.getInverseTransform();
+				
+				touchP = mult(graphTransform, touchP); 
+				touchP = mult(this.figure.inverseTransform, touchP);
+				x = touchP.get(0, 0);
+				y = touchP.get(1, 0);
+				return [x, y];
+			}
+
+			checkInBounds (x, y) {
+				let [rad_x, rad_y] = this.getTransformedPoints(Control.CONTROL_RADIUS+x, y);
+				[x, y] = this.getTransformedPoints(x, y);
+				
+				let x_diff = rad_x - x;
+				let y_diff = rad_y - y;
+
+				let sqrRad = x_diff * x_diff + y_diff * y_diff;
+				
+				for (let c of range(this.pointList[0].length)) {
+					let x_c = this.pointList[0][c];
+					let y_c = this.pointList[1][c];
+					x_diff = x - x_c;
+					y_diff = y - y_c; 
+					let distance = x_diff * x_diff + y_diff * y_diff;
+					if (distance <= sqrRad) {
+						this.selectedPoint = c;
+						return true;	
+					}
+				}
+				return false;
+			}
+
+			onMove(x, y) {
+				[x, y] = this.getTransformedPoints(x, y);
+				this.pointList[0][this.selectedPoint] = x;
+				this.pointList[1][this.selectedPoint] = y;
+				CanvasGraph.update();
+			}
+
+			get contents() {
+				return [this.pointMatrix, this.figure, this.args];
+			}
+		}
+
 		class CanvasGraph {
-			static canvas  = document.getElementById("graph");
-			static graph2D = CanvasGraph.canvas.getContext("2d");
 			static UPDATE_WAIT_TIME = 50;
+
+			static canvas;
+			static graph2D;
+			static mouseHandler;
 
 			static zoomX  =  0;
 			static zoomY  =  0;
+			static correctionScale = 1;
 			static xOffset = 0;
 			static yOffset = 0;
 			static offsetMatrix = new Matrix(3, 3);
 			static scaleMatrix  = new Matrix(3, 3);
 			static transMatrix  = new Matrix(3, 3);
-			static onRender = null;
+			static inverseOffsetMatrix = new Matrix(3, 3);
+			static inverseScaleMatrix  = new Matrix(3, 3);
+			static inverseTransMatrix  = new Matrix(3, 3);
+			
 			static pointsAtHome = 10;
-			static zoomHome = [1, 1];
-			static rerender = false;
-			static _isInit = false;
+			static zoomHomeValues = [1, 1];
+			
+			static onUpdate = null;
+			
+			static renderTriggered = false;
+			static updateTriggered = false;
 
-			static setHome() {
-				CanvasGraph.zoomX =  CanvasGraph.zoomHome[0];
-				CanvasGraph.zoomY =  CanvasGraph.zoomHome[1];
-				CanvasGraph.xOffset = 0;
-				CanvasGraph.yOffset = 0;
-				CanvasGraph.rerender = true;	
+			static _isInit = false;
+			static renderBuffer = new LinkedList();
+
+			static zoomHome() {
+				CanvasGraph.setZoom(CanvasGraph.zoomHomeValues[0], CanvasGraph.zoomHomeValues[1]);
+				CanvasGraph.setTranslate(0, 0);
+				CanvasGraph.render();
 			}
 
-			static init(onRender = null) {
+			static init(onUpdate = null) {
 				if (CanvasGraph._isInit)
 					throw "Canvas graph is already initialized"
 				CanvasGraph._isInit = true;
 
-				CanvasGraph.setOnRender(onRender);
+				CanvasGraph.canvas  = document.getElementById("graph");
+				CanvasGraph.graph2D = CanvasGraph.canvas.getContext("2d");
+
+				CanvasGraph.mouseHandler = CanvasGraph.__makeDefaultMouseHandler(CanvasGraph.canvas); 
+				Control.__resetControls();
+
+				CanvasGraph.setOnUpdate(onUpdate);
 
 				window.onresize = CanvasGraph.updateCanvasSize;
-				CanvasGraph.setTranslate(0, 0);
-				CanvasGraph.setZoom(CanvasGraph.zoomHome[0], CanvasGraph.zoomHome[1]);
+				CanvasGraph.zoomHome();
 				CanvasGraph.updateCanvasSize();
-				CanvasGraph.paint();
-				CanvasGraph.rerender = false;
+				CanvasGraph._update();
+				CanvasGraph._render();
+				CanvasGraph.updateTriggered = false;
+				CanvasGraph.renderTriggered = false;
 
 				let loop = async function () {
 					while (true) {
-						if (CanvasGraph.rerender) {
-							CanvasGraph.rerender = false;
-							CanvasGraph.paint();
-						}
+						CanvasGraph._update();
+						CanvasGraph._render();
 						await Utils.sleep(CanvasGraph.UPDATE_WAIT_TIME);
 					}
 				};
 				loop();
 			}
 
-			static setOnRender(onRender) {
-				if (onRender === null)
-					onRender = () => {};
+			static __makeDefaultMouseHandler(canvas) {
+				let pi = {x:0, y:0};
+				let onMove = (x, y) => {
+					let diffX = x - pi.x;
+					let diffY = y - pi.y;
+					let newX  = CanvasGraph.xOffset + diffX / CanvasGraph.zoomX / CanvasGraph.correctionScale;
+					let newY  = CanvasGraph.yOffset - diffY / CanvasGraph.zoomY / CanvasGraph.correctionScale;
+					CanvasGraph.setTranslate(newX, newY);
+					pi.x = x;
+					pi.y = y;
+				};
+				let onDown = (x, y) => {
+					pi.x = x;
+					pi.y = y;
+				};
+				let doNothing = (x, y) => {};
+				let defaultMouseHandler =  new MouseHandler(doNothing, onMove, onDown, doNothing);
+				return new CanvasMouseHandler(canvas, defaultMouseHandler);
+			}
+
+			static setOnUpdate(onUpdate) {
+				if (onUpdate === null)
+					onUpdate = () => {};
 				else 
-					CanvasGraph.onRender = onRender;
-				CanvasGraph.render();
+					CanvasGraph.onUpdate = onUpdate;
+				CanvasGraph.update();
+			}
+
+			static update() {				
+				CanvasGraph.updateTriggered = true;
+				CanvasGraph.renderTriggered = true;
 			}
 
 			static render() {
-				CanvasGraph.rerender = true;				
+				CanvasGraph.renderTriggered = true;				
 			}
 
-			static paint() {
+			static _update() {
+				if(!CanvasGraph.updateTriggered)
+					return;
+				CanvasGraph.updateTriggered = false;
+				CanvasGraph.renderBuffer.clear();
+				CanvasGraph.onUpdate();
+			}
+
+			static _render() {
+				if(!CanvasGraph.renderTriggered)
+					return;
+				CanvasGraph.renderTriggered = false;
 				CanvasGraph.clearCanvas();
-				if (CanvasGraph.onRender !== null)
-					CanvasGraph.onRender();
+				CanvasGraph.plotStoredPoints();
 			}
 
 			static clearCanvas() {
@@ -879,6 +1137,7 @@
 				CanvasGraph.xOffset = newX;
 				CanvasGraph.yOffset = newY;
 				CanvasGraph.transMatrix = createT(newX, newY);
+				CanvasGraph.inverseTransMatrix = createT(-newX, -newY);
 				CanvasGraph.render();
 			}
 
@@ -886,6 +1145,7 @@
 				CanvasGraph.zoomX = newZoomX;
 				CanvasGraph.zoomY = newZoomY;
 				CanvasGraph.scaleMatrix = createD(CanvasGraph.zoomX, CanvasGraph.zoomY, 1);
+				CanvasGraph.inverseScaleMatrix = createD(1/CanvasGraph.zoomX, 1/CanvasGraph.zoomY, 1);
 				CanvasGraph.render();
 			}
 			
@@ -906,17 +1166,27 @@
 
 				let homePoints = CanvasGraph.pointsAtHome;
 
+				CanvasGraph.correctionScale = smallerLength / homePoints ;
 				CanvasGraph.canvas.width = width;
 				CanvasGraph.canvas.height = height;
-				let scaleHomeMat = createD(smallerLength / homePoints, smallerLength / homePoints, 1);
+				
+				let scaleHomeMat = createD(CanvasGraph.correctionScale, CanvasGraph.correctionScale, 1);
 				let offsetMatrix = createOffsetMatrix(width, height);
-
 				CanvasGraph.offsetMatrix = mult(offsetMatrix, scaleHomeMat);
+				
+				let inverseScaleHomeMat = createD(1/CanvasGraph.correctionScale, 1/CanvasGraph.correctionScale, 1);
+				let inverseOffsetMatrix = createInverseOffsetMatrix(width, height);
+				CanvasGraph.inverseOffsetMatrix = mult(inverseScaleHomeMat, inverseOffsetMatrix);
+
 				CanvasGraph.render();
 			}
 
 			static getTransform() {
 				return mult(CanvasGraph.offsetMatrix, CanvasGraph.scaleMatrix, CanvasGraph.transMatrix);
+			}
+
+			static getInverseTransform() {
+				return mult(CanvasGraph.inverseScaleMatrix, CanvasGraph.inverseTransMatrix, CanvasGraph.inverseOffsetMatrix);
 			}
 
 			static setColor(fill, stroke=fill) {
@@ -934,12 +1204,15 @@
 				graph2D.stroke();
 			}
 
-			static getPointArgs(args=null) {
+			static getPointArgs(args=null) { 
+				let defaultRadius = ("link" in args) ? 10 : 5;
 				let pointArgs = {
+					link:null,
 					showPoints:true,
 					pointColor:"black",
-					pointRadius: 5,
+					pointRadius: defaultRadius,
 					showLines:false,
+					closePath : false,
 					lineColor:"black",
 					lineDash:[],
 					lineWidth:1
@@ -955,10 +1228,7 @@
 				return pointArgs;
 			}
 
-
-
-			static plotPoints(pointMatrix, args) {
-				let transform = CanvasGraph.getTransform();
+			static plotPoints(pointMatrix, args={}, transform=CanvasGraph.getTransform()) {
 				pointMatrix = mult(transform, pointMatrix);
 
 				let pointArgs = CanvasGraph.getPointArgs(args);
@@ -969,12 +1239,12 @@
 					let graph2D = CanvasGraph.graph2D;
 					graph2D.setLineDash(pointArgs.lineDash);
 					graph2D.lineWidth = pointArgs.lineWidth;
-					graph2D.moveTo(pointMatrix.get(0, 0),pointMatrix.get(1, 0));
 					graph2D.beginPath();
+					graph2D.moveTo(pointMatrix.get(0, 0),pointMatrix.get(1, 0));
 					for (let i = 1; i < pointMatrix.columns; i++)
 						graph2D.lineTo(pointMatrix.get(0, i),pointMatrix.get(1, i));
-					graph2D.lineTo(pointMatrix.get(0, 0),pointMatrix.get(1, 0));
-					graph2D.closePath();
+					if (pointArgs.closePath) 
+						graph2D.closePath();
 					graph2D.stroke();
 					graph2D.setLineDash([]);
 					graph2D.lineWidth = 1;
@@ -983,9 +1253,32 @@
 				if (pointArgs.showPoints) {
 					CanvasGraph.setColor(pointArgs.pointColor);
 					let radius = pointArgs.pointRadius;
+
 					for (let i = 0; i < pointMatrix.columns; i++)
 						CanvasGraph.plotPoint(pointMatrix.get(0, i), pointMatrix.get(1, i), radius);
 				}
+			}
+
+			static plotStoredPoints() {
+				let graphTransform = CanvasGraph.getTransform();
+				for (let item of CanvasGraph.renderBuffer) {
+					let [pointMatrix, figure, args] = item;
+					pointMatrix = mult(figure.transform, pointMatrix);
+					CanvasGraph.plotPoints(pointMatrix, args, graphTransform);
+				}
+				Control.__plotControls(graphTransform);
+			}
+
+			static storePlottedPoints(pointMatrix, figure, args) {
+				if("link" in args) {
+					let link = args["link"];
+					if (link === null) 
+						throw "link cannot be null";
+					Control.__addControl(link, [pointMatrix, figure, args], true);
+				} else {
+					CanvasGraph.renderBuffer.enqueue([pointMatrix, figure, args]);
+				}
+				
 			}
 		}
 
@@ -1040,7 +1333,7 @@
 					t:[0, 0],
 					s:[1, 1],
 					r: 0,
-					or:[Math.PI/3, Math.PI/3, 0],
+					or:[Math.PI/4, -Math.PI/4, -Math.PI/6],
 					ct:[-1,-1, -1],
 					is3D:false,
 					pers:true,
@@ -1081,47 +1374,83 @@
 				} else {
 					let s = this.args.s;
 					let scale = createD(s[0], s[1], 1);
+					let inverseScale = createD(1/s[0], 1/s[1], 1);
 					let t = this.args.t;
 					let translate = createT(t[0], t[1]);
+					let inverseTranslate = createT(-t[0], -t[1]);
 					let r = this.args.r;
 					let rotate = create2DR(r);
+					let inverseRotate = create2DR(-r);
 
 					this.transform = mult(translate, rotate, scale);
+					this.inverseTransform = mult(inverseScale, inverseRotate, inverseTranslate);
 				}
 				CanvasGraph.render();
 			}
-
 
 			plotXY(x, y=null, args={}) {
 				if (this.args.is3D)
 					throw "Cannot plot 2D points on a 3D figure";
 
 				let pointMatrix = Figure.get2DPointMatrix(x, y);
-				pointMatrix = mult(this.transform, pointMatrix);
-				CanvasGraph.plotPoints(pointMatrix, args);
+				CanvasGraph.storePlottedPoints(pointMatrix, this, args);
 			}
 
 			plotXYZ(x, y=null, z=null, args={}) {
 				if (!this.args.is3D)
 					throw "Cannot plot 3D points on a 2D figure";
+				if("link" in args)
+					throw "Cannot link a control to 3D points";
 				let pointMatrix = Figure.get3DPointMatrix(x, y, z);
-				pointMatrix = mult(this.transform, pointMatrix);
-				CanvasGraph.plotPoints(pointMatrix, args);
+				CanvasGraph.storePlottedPoints(pointMatrix, this, args);
+			}
+
+			plotAxis(size=1) {
+				if (this.args.is3D) {
+					this.plotXYZ([0, size], [0, 0], [0, 0], {showPoints:false, showLines:true, lineColor: "red"});
+					this.plotXYZ([0, 0], [0, size], [0, 0], {showPoints:false, showLines:true, lineColor: "green"});
+					this.plotXYZ([0, 0], [0, 0], [0, size], {showPoints:false, showLines:true, lineColor: "blue"});
+				} else {
+					this.plotXY([0, size], [0, 0], {showPoints:false, showLines:true, lineColor: "red"});
+					this.plotXY([0, 0], [0, size], {showPoints:false, showLines:true, lineColor: "green"});
+				}
 			}
 		}
 
 	</script>
+	
+	<!-- Configure Script -->
+	<script type="text/javascript">
+		function zoomIn() {
+			CanvasGraph.setZoom(CanvasGraph.zoomX * 2, CanvasGraph.zoomY * 2);
+		}
+		function zoomHome() {
+			CanvasGraph.zoomHome();
+		}
+		function zoomOut() {
+			CanvasGraph.setZoom(CanvasGraph.zoomX * 1/2, CanvasGraph.zoomY * 1/2);
+		}
+	</script>
 
 	<script type="text/javascript">
+		// Testing:
+		function onUpdate() {
+			let figure1 = new Figure({is3D : false, s : [2, 2], t : [3, 3]});
+			let figure2 = new Figure({is3D : true, s : [1, 1], t : [0, 0]});
+			figure1.plotAxis();
+			figure2.plotAxis();
+			figure1.plotXY([1, -1], [-1, 1], {link: "test", pointColor: "red", showLines:true});
+			figure1.plotXY([-1, 1], [-1, 1]);
+			figure2.plotXYZ([1, 0, 0], [0, 1, 0], [0, 0, 1], {showLines:true, lineColor: "red", lineDash: [1, 2], lineWidth: 3, closePath:true});
 
-		function myRender() {
-			// figure1 = new Figure({is3D : false, s : [.25, .25], t : [3, 3]});	
-			// figure1.plotXY([-1, 1], [-1, 1]);
-			figure2 = new Figure({is3D : true, s : [1, 1], t : [0, 0]});
-			figure2.plotXYZ([1, 0, 0], [0, 1, 0], [0, 0, 1], {showLines:true, lineColor: "red", lineDash: [1, 2], lineWidth: 3});
+			let points = Control.get("test");
+			if (points[0].length !== 3) {
+				points[0].push(-1);
+				points[1].push(-1);
+			}
 		}
 
-		CanvasGraph.init(myRender);
+		CanvasGraph.init(onUpdate);
 
 	</script>
 </html>
