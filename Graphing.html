@@ -14,21 +14,28 @@
 	<script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js></script>
 	
 	<style>
+		body, html {
+			height: 100%;
+			margin: 0px;
+		}
+
+		.strechDiv {
+			display: flex;
+			flex-flow: column;
+			height: 100%;
+		}
 		#editor { 
-	        /*position: absolute;
-	        top: 0;
-	        right: 0;
-	        bottom: 0;
-	        left: 0;*/
+	        position: relative;
 	        width: 100%;
-	        height: 100%;
+	        height: 70%;
 	    }
 		#graph {
 			background-color: white;
 		}
-		.debug {
-			background-color: red;
+		#console {
+			height: 30%;
 		}
+
 		.btn-circle { 
             width: 30px; 
             height: 30px;
@@ -41,16 +48,16 @@
 	</style>
 </head>
 	<body>
-		<div id="content" class="container-fluid">
+		<div id="content" class="container-fluid strechDiv">
 			<div id="graphingNavBar" class="row no-gutters">
 				<div class="col-12">
 					<div class="nav nav-tabs" role="tablist">
-						<a class="nav-item nav-link active" id="nav-user-tab" data-toggle="tab" href="#nav-user" role="tab" aria-controls="nav-user" aria-selected="true">User</a>
+						<a class="nav-item nav-link active" id="nav-user-tab" data-toggle="tab" href="#nav-user" role="tab" aria-controls="nav-user" aria-selected="true" onclick="CanvasGraph.update();">User</a>
 						<a class="nav-item nav-link" id="nav-dev-tab" data-toggle="tab" href="#nav-dev" role="tab" aria-controls="nav-dev" aria-selected="false">Developer</a>
 					</div>
 				</div>
 			</div>
-			<div class="tab-content">
+			<div class="tab-content strechDiv">
 				
 				<div class="tab-pane fade show active" id="nav-user" role="tabpanel" aria-labelledby="nav-user-tab">
 					<div id="graphHeading" class="row no-gutters">
@@ -66,7 +73,7 @@
 			  			</div>
 			  		</div>
 					<div class="row no-gutters">
-		  				<div class="col-3 debug" >
+		  				<div class="col-3" >
 		  					
 		  				</div>
 						<div class="col-9">
@@ -74,12 +81,23 @@
 			  			</div>
 			  		</div>
 	  			</div>
-				<div class="tab-pane fade" id="nav-dev" role="tabpanel" aria-labelledby="nav-dev-tab">
+				<div class="tab-pane fade strechDiv" id="nav-dev" role="tabpanel" aria-labelledby="nav-dev-tab">
+					<div id="editorWrapper" class="strechDiv">
+						<div id="editor"></div>
+						<div id="console" class="strechDiv">
+							<div class="card strechDiv">
+							  <div class="card-body strechDiv">
+							  	<h5 class="card-title border-bottom">Console<button type="button" class="btn btn-success" style="float: right;" onclick="CanvasGraph.update();">Run</button><button type="button" class="btn btn-secondary" style="float: right; margin-right: 5px;" onclick="Console.clear();">Clear</button></h5>
+								  	<ul id="console_content" class="list-group list-group-flush" style="overflow-y: scroll; margin:0px; padding: 0px"></ul>
+							  </div>
+							</div>
+						</div>
+					</div>
 				</div>
-
 	  		</div>
   		</div>
 	</body>
+	<script src="https://pagecdn.io/lib/ace/1.4.5/ace.js" integrity="sha256-5Xkhn3k/1rbXB+Q/DX/2RuAtaB4dRRyQvMs83prFjpM=" crossorigin="anonymous"></script>
 	
 	<script type="text/javascript">
 
@@ -825,6 +843,33 @@
 
 
 	<script type="text/javascript">
+		class Console {
+			static __maxEntries__ = 100;
+
+			static print(msg, color="black") {
+				if (msg !== null)
+					msg = msg.toString();
+				let console_content = document.getElementById("console_content");
+				let childAmt = console_content.childElementCount;
+				if (childAmt >= Console.__maxEntries__) {
+					let descendents = console_content.getElementsByTagName('*');
+					for (let i of range(childAmt-Console.__maxEntries__+1))
+						console_content.removeChild(descendents[i]);
+				}
+				let elem = document.createElement("LI"); 
+				elem.setAttribute("class", "list-group-item");
+				elem.setAttribute("style", "color: " + color + ";");
+				elem.innerText = msg;
+				console_content.appendChild(elem);
+			}
+
+			static clear() {
+				let console_content = document.getElementById("console_content");
+				console_content.innerHTML = "";
+			}
+
+		}
+
 		class MouseHandler {
 			constructor(checkInBounds=null, onMove=null, onDown=null, onUp=null) {
 				if ( checkInBounds !== null )
@@ -1430,27 +1475,45 @@
 		function zoomOut() {
 			CanvasGraph.setZoom(CanvasGraph.zoomX * 1/2, CanvasGraph.zoomY * 1/2);
 		}
+		function __initEditor__ () {
+			let editor = ace.edit("editor");
+		    editor.setTheme("ace/theme/monokai");
+		    editor.session.setMode("ace/mode/javascript");
+		    editor.resize();
+		}
+		function onUpdate() {
+			let __editor__ = ace.edit("editor");
+			let code = __editor__.getValue();
+			try {
+				eval(code);
+			} catch (e) {
+				Console.print(e.stack.toString(), "red");
+			}
+		}
+		CanvasGraph.init(onUpdate);
+
+		__initEditor__ ();
 	</script>
 
 	<script type="text/javascript">
 		// Testing:
-		function onUpdate() {
-			let figure1 = new Figure({is3D : false, s : [2, 2], t : [3, 3]});
-			let figure2 = new Figure({is3D : true, s : [1, 1], t : [0, 0]});
-			figure1.plotAxis();
-			figure2.plotAxis();
-			figure1.plotXY([1, -1], [-1, 1], {link: "test", pointColor: "red", showLines:true});
-			figure1.plotXY([-1, 1], [-1, 1]);
-			figure2.plotXYZ([1, 0, 0], [0, 1, 0], [0, 0, 1], {showLines:true, lineColor: "red", lineDash: [1, 2], lineWidth: 3, closePath:true});
+		// function onUpdate() {
+		// 	let figure1 = new Figure({is3D : false, s : [2, 2], t : [3, 3]});
+		// 	let figure2 = new Figure({is3D : true, s : [1, 1], t : [0, 0]});
+		// 	figure1.plotAxis();
+		// 	figure2.plotAxis();
+		// 	figure1.plotXY([1, -1], [-1, 1], {link: "test", pointColor: "red", showLines:true});
+		// 	figure1.plotXY([-1, 1], [-1, 1]);
+		// 	figure2.plotXYZ([1, 0, 0], [0, 1, 0], [0, 0, 1], {showLines:true, lineColor: "red", lineDash: [1, 2], lineWidth: 3, closePath:true});
 
-			let points = Control.get("test");
-			if (points[0].length !== 3) {
-				points[0].push(-1);
-				points[1].push(-1);
-			}
-		}
+		// 	let points = Control.get("test");
+		// 	if (points[0].length !== 3) {
+		// 		points[0].push(-1);
+		// 		points[1].push(-1);
+		// 	}
+		// }
 
-		CanvasGraph.init(onUpdate);
+		// CanvasGraph.init(onUpdate);
 
 	</script>
 </html>
