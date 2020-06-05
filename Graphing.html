@@ -24,16 +24,16 @@
 			flex-flow: column;
 			height: 100%;
 		}
-		#editor { 
+		
+
+		.editor { 
 	        position: relative;
 	        width: 100%;
-	        height: 70%;
+	        height: 100%;
 	    }
+
 		#graph {
 			background-color: white;
-		}
-		#console {
-			height: 30%;
 		}
 
 		.btn-circle { 
@@ -52,7 +52,7 @@
 			<div id="graphingNavBar" class="row no-gutters">
 				<div class="col-12">
 					<div class="nav nav-tabs" role="tablist">
-						<a class="nav-item nav-link active" id="nav-user-tab" data-toggle="tab" href="#nav-user" role="tab" aria-controls="nav-user" aria-selected="true" onclick="CanvasGraph.update();">User</a>
+						<a class="nav-item nav-link active" id="nav-user-tab" data-toggle="tab" href="#nav-user" role="tab" aria-controls="nav-user" aria-selected="true" onclick="__onSetup__();">User</a>
 						<a class="nav-item nav-link" id="nav-dev-tab" data-toggle="tab" href="#nav-dev" role="tab" aria-controls="nav-dev" aria-selected="false">Developer</a>
 					</div>
 				</div>
@@ -66,9 +66,9 @@
 		  				</div>
 						<div class="col-9">
 							<div class="float-right" style="margin: 10px 0 0 0">
-					 			<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;" onclick="zoomOut();">-</button>
-								<button type="button" class="btn btn-outline-primary" onclick="zoomHome();">Home</button>
-								<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;" onclick="zoomIn();">+</button>
+					 			<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;" onclick="__zoomOut__();">-</button>
+								<button type="button" class="btn btn-outline-primary" onclick="__zoomHome__();">Home</button>
+								<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;" onclick="__zoomIn__();">+</button>
 							</div>
 			  			</div>
 			  		</div>
@@ -82,14 +82,29 @@
 			  		</div>
 	  			</div>
 				<div class="tab-pane fade strechDiv" id="nav-dev" role="tabpanel" aria-labelledby="nav-dev-tab">
-					<div id="editorWrapper" class="strechDiv">
-						<div id="editor"></div>
-						<div id="console" class="strechDiv">
+					<ul class="nav nav-tabs" role="tablist">
+						<li class="nav-item" role="presentation">
+							<a class="nav-link active text-white bg-dark" id="setup-tab" data-toggle="tab" href="#setup-tab-content" role="tab" aria-controls="setup-tab-content" aria-selected="true">setup.js</a>
+							</li>
+						<li class="nav-item" role="presentation">
+							<a class="nav-link text-white bg-dark" id="update-tab" data-toggle="tab" href="#update-tab-content" role="tab" aria-controls="update-tab-content" aria-selected="false">update.js</a>
+						</li>
+					</ul>
+					<div class="strechDiv">
+						<div class="tab-content" style="height: 70%;">
+							<div class="tab-pane fade show active strechDiv" id="setup-tab-content" role="tabpanel" aria-labelledby="setup-tab">
+								<div class="editor" id="setup-editor"></div>
+							</div>
+							<div class="tab-pane fade strechDiv" id="update-tab-content" role="tabpanel" aria-labelledby="update-tab">
+								<div class="editor" id="update-editor"></div>
+							</div>
+						</div>
+						<div style="height: 30%;">
 							<div class="card strechDiv">
-							  <div class="card-body strechDiv">
-							  	<h5 class="card-title border-bottom">Console<button type="button" class="btn btn-success" style="float: right;" onclick="CanvasGraph.update();">Run</button><button type="button" class="btn btn-secondary" style="float: right; margin-right: 5px;" onclick="Console.clear();">Clear</button></h5>
-								  	<ul id="console_content" class="list-group list-group-flush" style="overflow-y: scroll; margin:0px; padding: 0px"></ul>
-							  </div>
+								<div class="card-body strechDiv">
+									<h5 class="card-title border-bottom">Console<button type="button" class="btn btn-success" style="float: right;" onclick="__onSetup__();">Run</button><button type="button" class="btn btn-secondary" style="float: right; margin-right: 5px;" onclick="Console.clear();">Clear</button></h5>
+									<ul id="console" class="list-group list-group-flush" style="overflow-y: scroll; margin:0px; padding: 0px"></ul>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -101,7 +116,7 @@
 	
 	<script type="text/javascript">
 
-		class Utils {
+		class __Utils__ {
 			static isIterable(obj) {
   				// checks for null and undefined
 				if (obj == null) {
@@ -399,14 +414,14 @@
 			}
 
 			bulkGet(row, column) {
-				if (Utils.isIterable(row) || Utils.isIterable(column)) {
+				if (__Utils__.isIterable(row) || __Utils__.isIterable(column)) {
 					let rows = null;
 					let columns = null;
-					if (! Utils.isIterable(row)) {
+					if (! __Utils__.isIterable(row)) {
 						rows = [row];
 						if (! Arrays.isArray(column))
 							columns = new LinkedList(column);
-					} else if (! Utils.isIterable(column)) {
+					} else if (! __Utils__.isIterable(column)) {
 						if (! Arrays.isArray(rows))
 							rows = new LinkedList(row);
 						columns = [column];
@@ -428,27 +443,27 @@
 			}
 
 			bulkSet(row, column) {
-				if (Utils.isIterable(row) || Utils.isIterable(column)) {
+				if (__Utils__.isIterable(row) || __Utils__.isIterable(column)) {
 					let rows = null;
 					let columns = null;
-					if (! Utils.isIterable(row)) {
+					if (! __Utils__.isIterable(row)) {
 						rows = [row];
 						if (! Arrays.isArray(columns))
 							columns = new LinkedList(column);
-					} else if (! Utils.isIterable(column)) {
+					} else if (! __Utils__.isIterable(column)) {
 						if (! Arrays.isArray(rows))
 							rows = new LinkedList(row);
 						columns = [column];
 					}
 					
-					if (! Utils.isIterable(element)) {
+					if (! __Utils__.isIterable(element)) {
 						for (let row of rows)
 							for (let column of columns)
 								this.set(element, row, column);
 						return output;
 					} else {
 						let elems = new LinkedList(element);
-						if (Utils.isIterable(elems.get(0))) {
+						if (__Utils__.isIterable(elems.get(0))) {
 							for (let row of rows) {
 								let colElems = new LinkedList(elems.get(0));
 								for (let column of columns) {
@@ -668,7 +683,7 @@
 			return new Matrix(values.length, 1, values);
 		}
 
-		function splitValues (valueArr) {
+		function __splitValues__ (valueArr) {
 			valueArr = Matrix.spread(valueArr);
 			for (let i = 0; i < valueArr.length; i++) {
 				let value = valueArr[i];
@@ -682,17 +697,17 @@
 		}
 
 		function mult (...values) {
-			const [matrix, valuesM] = splitValues(values);
+			const [matrix, valuesM] = __splitValues__(values);
 			return matrix.matmul(valuesM);
 		}
 
 		function multiply (...values) {
-			const [matrix, valuesM] = splitValues(values);
+			const [matrix, valuesM] = __splitValues__(values);
 			return matrix.multiply(valuesM);
 		}
 
 		function add (...values) {
-			const [matrix, valuesM] = splitValues(values);
+			const [matrix, valuesM] = __splitValues__(values);
 			return matrix.add(valuesM);
 		}
 
@@ -755,13 +770,6 @@
 			return mult(rollM, yawM, pitchM);			
 		}
 
-		function createInverseEulerR(pitch, yaw, roll) {
-			let pitchM = create3DR (-pitch, [1, 0, 0]);
-			let yawM = create3DR (-yaw, [0, 1, 0]);
-			let rollM = create3DR (-roll, [0, 0, 1]);
-			return mult(pitchM, yawM, rollM);
-		}
-
 		function create2DR (theta) {
 			let cos = Math.cos(theta);
 			let sin = Math.sin(theta);
@@ -798,7 +806,7 @@
 			return output;
 		}
 
-		function createPers (fov, near, far) {
+		function __createPers__ (fov, near, far) {
 			let s = 1 / Math.tan(fov/2)
 			let c1 = - (far + near) / (far - near)
 			let c2 = - 2 * far * near / (far - near)
@@ -810,7 +818,7 @@
 				);
 		}
 
-		function createOrtho (left, top, right, bottom, near, far) {
+		function __createOrtho__ (left, top, right, bottom, near, far) {
 			let xs = right - left
 			let xa = right + left
 			let ys = top - bottom
@@ -825,14 +833,14 @@
 				);
 		}
 
-		function createOffsetMatrix (width, height) {
+		function __createOffsetMatrix__ (width, height) {
 			return new Matrix(3, 3, 
 				 1,  0, width / 2 , 
 				 0,  - 1, height / 2 , 
 				 0,  0,   1);
 		}
 
-		function createInverseOffsetMatrix(width, height) {
+		function __createInverseOffsetMatrix__(width, height) {
 			return new Matrix(3, 3, 
 				 1,  0, - width / 2 , 
 				 0,  - 1, height / 2 , 
@@ -849,28 +857,28 @@
 			static print(msg, color="black") {
 				if (msg !== null)
 					msg = msg.toString();
-				let console_content = document.getElementById("console_content");
-				let childAmt = console_content.childElementCount;
+				let console = document.getElementById("console");
+				let childAmt = console.childElementCount;
 				if (childAmt >= Console.__maxEntries__) {
-					let descendents = console_content.getElementsByTagName('*');
+					let descendents = console.getElementsByTagName('*');
 					for (let i of range(childAmt-Console.__maxEntries__+1))
-						console_content.removeChild(descendents[i]);
+						console.removeChild(descendents[i]);
 				}
 				let elem = document.createElement("LI"); 
 				elem.setAttribute("class", "list-group-item");
 				elem.setAttribute("style", "color: " + color + ";");
 				elem.innerText = msg;
-				console_content.appendChild(elem);
+				console.appendChild(elem);
 			}
 
 			static clear() {
-				let console_content = document.getElementById("console_content");
-				console_content.innerHTML = "";
+				let console = document.getElementById("console");
+				console.innerHTML = "";
 			}
 
 		}
 
-		class MouseHandler {
+		class __MouseHandler__ {
 			constructor(checkInBounds=null, onMove=null, onDown=null, onUp=null) {
 				if ( checkInBounds !== null )
 					this.checkInBounds = checkInBounds;
@@ -947,7 +955,7 @@
 			}
 		}
 
-		class Control extends MouseHandler {
+		class Control extends __MouseHandler__ {
 			static CONTROL_RADIUS = 10;
 			static allControls = null;
 			static plottableControls = new LinkedList(); 
@@ -955,8 +963,8 @@
 			static __resetControls() {
 				Control.allControls = {};
 				Control.plottableControls.clear();				
-				CanvasGraph.mouseHandler.mouseHandlerList.clear();
-				CanvasGraph.update();
+				__CanvasGraph__.mouseHandler.mouseHandlerList.clear();
+				__CanvasGraph__.update();
 			}
 
 			static __addControl(key, content, plottable=false) {
@@ -965,7 +973,7 @@
 					if ( !(key in Control.allControls) ) {
 						let control = new Control(pointMatrix, figure, args);
 						Control.plottableControls.add(control);
-						CanvasGraph.mouseHandler.mouseHandlerList.add(control);
+						__CanvasGraph__.mouseHandler.mouseHandlerList.add(control);
 						Control.allControls[key] = control.pointList;
 					}
 				} else {
@@ -981,7 +989,7 @@
 				for (let control of Control.plottableControls) {
 					let [pointMatrix, figure, args] = control.contents;
 					pointMatrix = mult(figure.transform, pointMatrix);
-					CanvasGraph.plotPoints(pointMatrix, args, graphTransform);
+					__CanvasGraph__.plotPoints(pointMatrix, args, graphTransform);
 				}
 			}
 
@@ -1010,7 +1018,7 @@
 
 			getTransformedPoints(x, y) {
 				let touchP = vector(x, y, 1);
-				let graphTransform = CanvasGraph.getInverseTransform();
+				let graphTransform = __CanvasGraph__.getInverseTransform();
 				
 				touchP = mult(graphTransform, touchP); 
 				touchP = mult(this.figure.inverseTransform, touchP);
@@ -1046,7 +1054,7 @@
 				[x, y] = this.getTransformedPoints(x, y);
 				this.pointList[0][this.selectedPoint] = x;
 				this.pointList[1][this.selectedPoint] = y;
-				CanvasGraph.update();
+				__CanvasGraph__.update();
 			}
 
 			get contents() {
@@ -1054,7 +1062,7 @@
 			}
 		}
 
-		class CanvasGraph {
+		class __CanvasGraph__ {
 			static UPDATE_WAIT_TIME = 50;
 
 			static canvas;
@@ -1085,37 +1093,40 @@
 			static renderBuffer = new LinkedList();
 
 			static zoomHome() {
-				CanvasGraph.setZoom(CanvasGraph.zoomHomeValues[0], CanvasGraph.zoomHomeValues[1]);
-				CanvasGraph.setTranslate(0, 0);
-				CanvasGraph.render();
+				__CanvasGraph__.setZoom(__CanvasGraph__.zoomHomeValues[0], __CanvasGraph__.zoomHomeValues[1]);
+				__CanvasGraph__.setTranslate(0, 0);
+				__CanvasGraph__.render();
 			}
 
-			static init(onUpdate = null) {
-				if (CanvasGraph._isInit)
+			static init(onUpdate = null, onSetup = null) {
+				if (__CanvasGraph__._isInit)
 					throw "Canvas graph is already initialized"
-				CanvasGraph._isInit = true;
+				__CanvasGraph__._isInit = true;
 
-				CanvasGraph.canvas  = document.getElementById("graph");
-				CanvasGraph.graph2D = CanvasGraph.canvas.getContext("2d");
+				__CanvasGraph__.canvas  = document.getElementById("graph");
+				__CanvasGraph__.graph2D = __CanvasGraph__.canvas.getContext("2d");
 
-				CanvasGraph.mouseHandler = CanvasGraph.__makeDefaultMouseHandler(CanvasGraph.canvas); 
+				__CanvasGraph__.mouseHandler = __CanvasGraph__.__makeDefaultMouseHandler(__CanvasGraph__.canvas); 
 				Control.__resetControls();
 
-				CanvasGraph.setOnUpdate(onUpdate);
+				__CanvasGraph__.setOnUpdate(onUpdate);
 
-				window.onresize = CanvasGraph.updateCanvasSize;
-				CanvasGraph.zoomHome();
-				CanvasGraph.updateCanvasSize();
-				CanvasGraph._update();
-				CanvasGraph._render();
-				CanvasGraph.updateTriggered = false;
-				CanvasGraph.renderTriggered = false;
+				window.onresize = __CanvasGraph__.updateCanvasSize;
+				__CanvasGraph__.zoomHome();
+				__CanvasGraph__.updateCanvasSize();
+
+				if (onSetup !== null)
+					onSetup();
+				__CanvasGraph__._update();
+				__CanvasGraph__._render();
+				__CanvasGraph__.updateTriggered = false;
+				__CanvasGraph__.renderTriggered = false;
 
 				let loop = async function () {
 					while (true) {
-						CanvasGraph._update();
-						CanvasGraph._render();
-						await Utils.sleep(CanvasGraph.UPDATE_WAIT_TIME);
+						__CanvasGraph__._update();
+						__CanvasGraph__._render();
+						await __Utils__.sleep(__CanvasGraph__.UPDATE_WAIT_TIME);
 					}
 				};
 				loop();
@@ -1126,9 +1137,9 @@
 				let onMove = (x, y) => {
 					let diffX = x - pi.x;
 					let diffY = y - pi.y;
-					let newX  = CanvasGraph.xOffset + diffX / CanvasGraph.zoomX / CanvasGraph.correctionScale;
-					let newY  = CanvasGraph.yOffset - diffY / CanvasGraph.zoomY / CanvasGraph.correctionScale;
-					CanvasGraph.setTranslate(newX, newY);
+					let newX  = __CanvasGraph__.xOffset + diffX / __CanvasGraph__.zoomX / __CanvasGraph__.correctionScale;
+					let newY  = __CanvasGraph__.yOffset - diffY / __CanvasGraph__.zoomY / __CanvasGraph__.correctionScale;
+					__CanvasGraph__.setTranslate(newX, newY);
 					pi.x = x;
 					pi.y = y;
 				};
@@ -1137,7 +1148,7 @@
 					pi.y = y;
 				};
 				let doNothing = (x, y) => {};
-				let defaultMouseHandler =  new MouseHandler(doNothing, onMove, onDown, doNothing);
+				let defaultMouseHandler =  new __MouseHandler__(doNothing, onMove, onDown, doNothing);
 				return new CanvasMouseHandler(canvas, defaultMouseHandler);
 			}
 
@@ -1145,53 +1156,53 @@
 				if (onUpdate === null)
 					onUpdate = () => {};
 				else 
-					CanvasGraph.onUpdate = onUpdate;
-				CanvasGraph.update();
+					__CanvasGraph__.onUpdate = onUpdate;
+				__CanvasGraph__.update();
 			}
 
 			static update() {				
-				CanvasGraph.updateTriggered = true;
-				CanvasGraph.renderTriggered = true;
+				__CanvasGraph__.updateTriggered = true;
+				__CanvasGraph__.renderTriggered = true;
 			}
 
 			static render() {
-				CanvasGraph.renderTriggered = true;				
+				__CanvasGraph__.renderTriggered = true;				
 			}
 
 			static _update() {
-				if(!CanvasGraph.updateTriggered)
+				if(!__CanvasGraph__.updateTriggered)
 					return;
-				CanvasGraph.updateTriggered = false;
-				CanvasGraph.renderBuffer.clear();
-				CanvasGraph.onUpdate();
+				__CanvasGraph__.updateTriggered = false;
+				__CanvasGraph__.renderBuffer.clear();
+				__CanvasGraph__.onUpdate();
 			}
 
 			static _render() {
-				if(!CanvasGraph.renderTriggered)
+				if(!__CanvasGraph__.renderTriggered)
 					return;
-				CanvasGraph.renderTriggered = false;
-				CanvasGraph.clearCanvas();
-				CanvasGraph.plotStoredPoints();
+				__CanvasGraph__.renderTriggered = false;
+				__CanvasGraph__.clearCanvas();
+				__CanvasGraph__.plotStoredPoints();
 			}
 
 			static clearCanvas() {
-				CanvasGraph.graph2D.clearRect(0, 0, CanvasGraph.canvas.width, CanvasGraph.canvas.height);
+				__CanvasGraph__.graph2D.clearRect(0, 0, __CanvasGraph__.canvas.width, __CanvasGraph__.canvas.height);
 			}
 
 			static setTranslate(newX, newY) {
-				CanvasGraph.xOffset = newX;
-				CanvasGraph.yOffset = newY;
-				CanvasGraph.transMatrix = createT(newX, newY);
-				CanvasGraph.inverseTransMatrix = createT(-newX, -newY);
-				CanvasGraph.render();
+				__CanvasGraph__.xOffset = newX;
+				__CanvasGraph__.yOffset = newY;
+				__CanvasGraph__.transMatrix = createT(newX, newY);
+				__CanvasGraph__.inverseTransMatrix = createT(-newX, -newY);
+				__CanvasGraph__.render();
 			}
 
 			static setZoom(newZoomX, newZoomY) {
-				CanvasGraph.zoomX = newZoomX;
-				CanvasGraph.zoomY = newZoomY;
-				CanvasGraph.scaleMatrix = createD(CanvasGraph.zoomX, CanvasGraph.zoomY, 1);
-				CanvasGraph.inverseScaleMatrix = createD(1/CanvasGraph.zoomX, 1/CanvasGraph.zoomY, 1);
-				CanvasGraph.render();
+				__CanvasGraph__.zoomX = newZoomX;
+				__CanvasGraph__.zoomY = newZoomY;
+				__CanvasGraph__.scaleMatrix = createD(__CanvasGraph__.zoomX, __CanvasGraph__.zoomY, 1);
+				__CanvasGraph__.inverseScaleMatrix = createD(1/__CanvasGraph__.zoomX, 1/__CanvasGraph__.zoomY, 1);
+				__CanvasGraph__.render();
 			}
 			
 			static measureCanvasSpace() {
@@ -1201,47 +1212,47 @@
 				
 				let navHeight = nav.offsetHeight;
 				let graphHeadingHeight = graphHeading.offsetHeight;
-				let width = CanvasGraph.canvas.parentElement.offsetWidth;
+				let width = __CanvasGraph__.canvas.parentElement.offsetWidth;
 				return [width, innerHeight - navHeight - graphHeadingHeight];
 			}
 
 			static updateCanvasSize() {
-				let [width, height] = CanvasGraph.measureCanvasSpace();
+				let [width, height] = __CanvasGraph__.measureCanvasSpace();
 				let smallerLength = width < height ? width : height ;
 
-				let homePoints = CanvasGraph.pointsAtHome;
+				let homePoints = __CanvasGraph__.pointsAtHome;
 
-				CanvasGraph.correctionScale = smallerLength / homePoints ;
-				CanvasGraph.canvas.width = width;
-				CanvasGraph.canvas.height = height;
+				__CanvasGraph__.correctionScale = smallerLength / homePoints ;
+				__CanvasGraph__.canvas.width = width;
+				__CanvasGraph__.canvas.height = height;
 				
-				let scaleHomeMat = createD(CanvasGraph.correctionScale, CanvasGraph.correctionScale, 1);
-				let offsetMatrix = createOffsetMatrix(width, height);
-				CanvasGraph.offsetMatrix = mult(offsetMatrix, scaleHomeMat);
+				let scaleHomeMat = createD(__CanvasGraph__.correctionScale, __CanvasGraph__.correctionScale, 1);
+				let offsetMatrix = __createOffsetMatrix__(width, height);
+				__CanvasGraph__.offsetMatrix = mult(offsetMatrix, scaleHomeMat);
 				
-				let inverseScaleHomeMat = createD(1/CanvasGraph.correctionScale, 1/CanvasGraph.correctionScale, 1);
-				let inverseOffsetMatrix = createInverseOffsetMatrix(width, height);
-				CanvasGraph.inverseOffsetMatrix = mult(inverseScaleHomeMat, inverseOffsetMatrix);
+				let inverseScaleHomeMat = createD(1/__CanvasGraph__.correctionScale, 1/__CanvasGraph__.correctionScale, 1);
+				let inverseOffsetMatrix = __createInverseOffsetMatrix__(width, height);
+				__CanvasGraph__.inverseOffsetMatrix = mult(inverseScaleHomeMat, inverseOffsetMatrix);
 
-				CanvasGraph.render();
+				__CanvasGraph__.render();
 			}
 
 			static getTransform() {
-				return mult(CanvasGraph.offsetMatrix, CanvasGraph.scaleMatrix, CanvasGraph.transMatrix);
+				return mult(__CanvasGraph__.offsetMatrix, __CanvasGraph__.scaleMatrix, __CanvasGraph__.transMatrix);
 			}
 
 			static getInverseTransform() {
-				return mult(CanvasGraph.inverseScaleMatrix, CanvasGraph.inverseTransMatrix, CanvasGraph.inverseOffsetMatrix);
+				return mult(__CanvasGraph__.inverseScaleMatrix, __CanvasGraph__.inverseTransMatrix, __CanvasGraph__.inverseOffsetMatrix);
 			}
 
 			static setColor(fill, stroke=fill) {
-				let graph2D = CanvasGraph.graph2D;
+				let graph2D = __CanvasGraph__.graph2D;
 				graph2D.fillStyle = fill;
 				graph2D.strokeStyle = stroke;
 			}
 
 			static plotPoint(x, y, radius=5) {
-				let graph2D = CanvasGraph.graph2D;
+				let graph2D = __CanvasGraph__.graph2D;
 				graph2D.beginPath();
 				graph2D.arc(x, y, radius, 0, 2 * Math.PI);
 				graph2D.closePath();
@@ -1273,15 +1284,15 @@
 				return pointArgs;
 			}
 
-			static plotPoints(pointMatrix, args={}, transform=CanvasGraph.getTransform()) {
+			static plotPoints(pointMatrix, args={}, transform=__CanvasGraph__.getTransform()) {
 				pointMatrix = mult(transform, pointMatrix);
 
-				let pointArgs = CanvasGraph.getPointArgs(args);
+				let pointArgs = __CanvasGraph__.getPointArgs(args);
 
 				if (pointArgs.showLines && pointMatrix.columns > 1) {
-					CanvasGraph.setColor(pointArgs.lineColor);
+					__CanvasGraph__.setColor(pointArgs.lineColor);
 
-					let graph2D = CanvasGraph.graph2D;
+					let graph2D = __CanvasGraph__.graph2D;
 					graph2D.setLineDash(pointArgs.lineDash);
 					graph2D.lineWidth = pointArgs.lineWidth;
 					graph2D.beginPath();
@@ -1296,20 +1307,20 @@
 				}
 
 				if (pointArgs.showPoints) {
-					CanvasGraph.setColor(pointArgs.pointColor);
+					__CanvasGraph__.setColor(pointArgs.pointColor);
 					let radius = pointArgs.pointRadius;
 
 					for (let i = 0; i < pointMatrix.columns; i++)
-						CanvasGraph.plotPoint(pointMatrix.get(0, i), pointMatrix.get(1, i), radius);
+						__CanvasGraph__.plotPoint(pointMatrix.get(0, i), pointMatrix.get(1, i), radius);
 				}
 			}
 
 			static plotStoredPoints() {
-				let graphTransform = CanvasGraph.getTransform();
-				for (let item of CanvasGraph.renderBuffer) {
+				let graphTransform = __CanvasGraph__.getTransform();
+				for (let item of __CanvasGraph__.renderBuffer) {
 					let [pointMatrix, figure, args] = item;
 					pointMatrix = mult(figure.transform, pointMatrix);
-					CanvasGraph.plotPoints(pointMatrix, args, graphTransform);
+					__CanvasGraph__.plotPoints(pointMatrix, args, graphTransform);
 				}
 				Control.__plotControls(graphTransform);
 			}
@@ -1321,7 +1332,7 @@
 						throw "link cannot be null";
 					Control.__addControl(link, [pointMatrix, figure, args], true);
 				} else {
-					CanvasGraph.renderBuffer.enqueue([pointMatrix, figure, args]);
+					__CanvasGraph__.renderBuffer.enqueue([pointMatrix, figure, args]);
 				}
 				
 			}
@@ -1399,9 +1410,9 @@
 					let projection = null;
 					let box = this.args.box;
 					if (this.args.pers)
-						projection = createPers (this.args.fov, box[4], box[5]);
+						projection = __createPers__ (this.args.fov, box[4], box[5]);
 					else
-						projection = createOrtho (box[0], box[1], box[2], box[3], box[4], box[5]);
+						projection = __createOrtho__ (box[0], box[1], box[2], box[3], box[4], box[5]);
 					let s = this.args.s;
 					let scale = createD(s[0], s[1], 1, 1);
 					let t = this.args.t;
@@ -1430,7 +1441,7 @@
 					this.transform = mult(translate, rotate, scale);
 					this.inverseTransform = mult(inverseScale, inverseRotate, inverseTranslate);
 				}
-				CanvasGraph.render();
+				__CanvasGraph__.render();
 			}
 
 			plotXY(x, y=null, args={}) {
@@ -1438,7 +1449,7 @@
 					throw "Cannot plot 2D points on a 3D figure";
 
 				let pointMatrix = Figure.get2DPointMatrix(x, y);
-				CanvasGraph.storePlottedPoints(pointMatrix, this, args);
+				__CanvasGraph__.storePlottedPoints(pointMatrix, this, args);
 			}
 
 			plotXYZ(x, y=null, z=null, args={}) {
@@ -1447,7 +1458,7 @@
 				if("link" in args)
 					throw "Cannot link a control to 3D points";
 				let pointMatrix = Figure.get3DPointMatrix(x, y, z);
-				CanvasGraph.storePlottedPoints(pointMatrix, this, args);
+				__CanvasGraph__.storePlottedPoints(pointMatrix, this, args);
 			}
 
 			plotAxis(size=1) {
@@ -1466,54 +1477,54 @@
 	
 	<!-- Configure Script -->
 	<script type="text/javascript">
-		function zoomIn() {
-			CanvasGraph.setZoom(CanvasGraph.zoomX * 2, CanvasGraph.zoomY * 2);
+		function __zoomIn__() {
+			__CanvasGraph__.setZoom(__CanvasGraph__.zoomX * 2, __CanvasGraph__.zoomY * 2);
 		}
-		function zoomHome() {
-			CanvasGraph.zoomHome();
+		function __zoomHome__() {
+			__CanvasGraph__.zoomHome();
 		}
-		function zoomOut() {
-			CanvasGraph.setZoom(CanvasGraph.zoomX * 1/2, CanvasGraph.zoomY * 1/2);
+		function __zoomOut__() {
+			__CanvasGraph__.setZoom(__CanvasGraph__.zoomX * 1/2, __CanvasGraph__.zoomY * 1/2);
 		}
-		function __initEditor__ () {
-			let editor = ace.edit("editor");
-		    editor.setTheme("ace/theme/monokai");
-		    editor.session.setMode("ace/mode/javascript");
-		    editor.resize();
+		function __initEditors__ () {
+			let setup_editor = ace.edit("setup-editor");
+		    setup_editor.setTheme("ace/theme/monokai");
+		    setup_editor.session.setMode("ace/mode/javascript");
+		    setup_editor.resize();
+
+		    let update_editor = ace.edit("update-editor");
+			update_editor.setTheme("ace/theme/monokai");
+		    update_editor.session.setMode("ace/mode/javascript");
+		    update_editor.resize();
 		}
-		function onUpdate() {
-			let __editor__ = ace.edit("editor");
-			let code = __editor__.getValue();
+		__initEditors__ ();
+
+		let __update__ = function () {};
+
+
+		function __onSetup__() {
+			let setup_editor = ace.edit("setup-editor");
+			let update_editor = ace.edit("update-editor");
+			let setup_code = setup_editor.getValue();
+			let update_code = update_editor.getValue();
+			update_code = "__update__ = function () {" + update_code + "};";
 			try {
-				eval(code);
+				eval(setup_code);
+				eval(update_code);
+			} catch (e) {
+				Console.print(e.stack.toString(), "red");
+			}
+			__CanvasGraph__.update();	
+		}
+
+		function __onUpdate__() {
+			try {
+				__update__();				
 			} catch (e) {
 				Console.print(e.stack.toString(), "red");
 			}
 		}
-		CanvasGraph.init(onUpdate);
-
-		__initEditor__ ();
-	</script>
-
-	<script type="text/javascript">
-		// Testing:
-		// function onUpdate() {
-		// 	let figure1 = new Figure({is3D : false, s : [2, 2], t : [3, 3]});
-		// 	let figure2 = new Figure({is3D : true, s : [1, 1], t : [0, 0]});
-		// 	figure1.plotAxis();
-		// 	figure2.plotAxis();
-		// 	figure1.plotXY([1, -1], [-1, 1], {link: "test", pointColor: "red", showLines:true});
-		// 	figure1.plotXY([-1, 1], [-1, 1]);
-		// 	figure2.plotXYZ([1, 0, 0], [0, 1, 0], [0, 0, 1], {showLines:true, lineColor: "red", lineDash: [1, 2], lineWidth: 3, closePath:true});
-
-		// 	let points = Control.get("test");
-		// 	if (points[0].length !== 3) {
-		// 		points[0].push(-1);
-		// 		points[1].push(-1);
-		// 	}
-		// }
-
-		// CanvasGraph.init(onUpdate);
+		__CanvasGraph__.init(__onUpdate__, __onSetup__);
 
 	</script>
 </html>
