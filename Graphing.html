@@ -88,10 +88,19 @@
 						<div class="flex-grow-1">
 							<div class="tab-content flexColumn" style="height: 70%;">
 								<div class="tab-pane fade show active flex-grow-1" id="setup-tab-content" role="tabpanel" aria-labelledby="setup-tab">
-									<div class="editor" id="setup-editor"></div>
+									<div class="editor" id="setup-editor">var figure = new Figure();
+let args = {link: "joe", showLines:true, pointColor: "purple",
+                lineColor: "red", lineDash:[1, 2, 3]};
+figure.plotXY([1, 0], [0, 1], args);</div>
 								</div>
 								<div class="tab-pane fade flex-grow-1" id="update-tab-content" role="tabpanel" aria-labelledby="update-tab">
-									<div class="editor" id="update-editor"></div>
+									<div class="editor" id="update-editor">Console.clear();
+
+let arrays = Control.get("joe");
+Console.print(arrays);
+
+let args = {pointColor: "blue", showLines: true};
+figure.plotXY(arrays[1], arrays[0], args);</div>
 								</div>
 							</div>
 							<div class="card" style="height: 30%;">
@@ -101,7 +110,8 @@
 											<h5 class="card-title">Console</h5>
 										</span>
 										<button type="button" class="btn btn-success" style="float: right;" onclick="__onSetup__();">Run</button>
-										<button type="button" class="btn btn-secondary" style="float: right; margin-right: 5px;" onclick="Console.clear();">Clear</button>	
+										<button type="button" class="btn btn-secondary" style="float: right; margin-right: 5px;" onclick="Console.clear();">Clear</button>
+										<button type="button" class="btn text-white bg-danger" style="float: right; margin-right: 5px;" onclick="Control.__resetControls();">Reset Controls</button>	
 									</div>
 									<div class="flexColumn flex-grow-1" style="overflow: hidden;">
 										<ul id="console" class="list-group list-group-flush flex-grow-1" style="overflow-y: auto;">
@@ -961,13 +971,15 @@
 		class Control extends __MouseHandler__ {
 			static CONTROL_RADIUS = 10;
 			static allControls = null;
-			static plottableControls = new LinkedList(); 
+			static plottableControls = new LinkedList();
+			static plottableControlsSet = null; 
 
 			static __resetControls() {
 				Control.allControls = {};
-				Control.plottableControls.clear();				
+				Control.plottableControls.clear();
+				Control.plottableControlsSet = {};				
 				__CanvasGraph__.mouseHandler.mouseHandlerList.clear();
-				__CanvasGraph__.update();
+				// __CanvasGraph__.update();
 			}
 
 			static __addControl(key, content, plottable=false) {
@@ -976,8 +988,13 @@
 					if ( !(key in Control.allControls) ) {
 						let control = new Control(pointMatrix, figure, args);
 						Control.plottableControls.add(control);
+						Control.plottableControlsSet[key] = control; 
 						__CanvasGraph__.mouseHandler.mouseHandlerList.add(control);
 						Control.allControls[key] = control.pointList;
+					} else {
+						let control = Control.plottableControlsSet[key];
+						control.figure = figure;
+						control.args = args;
 					}
 				} else {
 					Control.allControls[key] = content;
@@ -1522,7 +1539,7 @@
 			try {
 				__CanvasGraph__.setupRenderBuffer.clear();
 				__CanvasGraph__.useSetupBuffer = true;
-				eval(setup_code);
+				(1, eval)(setup_code);
 				__CanvasGraph__.useSetupBuffer = false;
 				eval(update_code);
 			} catch (e) {
