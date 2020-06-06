@@ -19,22 +19,24 @@
 			margin: 0px;
 		}
 
-		.strechDiv {
+		.flexColumn {
 			display: flex;
 			flex-flow: column;
-			height: 100%;
+		}
+
+		.strechHeight {
+			height: 100%;	
 		}
 		
+		#graph {
+			background-color: white;
+		}
 
 		.editor { 
 	        position: relative;
 	        width: 100%;
 	        height: 100%;
 	    }
-
-		#graph {
-			background-color: white;
-		}
 
 		.btn-circle { 
             width: 30px; 
@@ -48,62 +50,63 @@
 	</style>
 </head>
 	<body>
-		<div id="content" class="container-fluid strechDiv">
-			<div id="graphingNavBar" class="row no-gutters">
-				<div class="col-12">
-					<div class="nav nav-tabs" role="tablist">
-						<a class="nav-item nav-link active" id="nav-user-tab" data-toggle="tab" href="#nav-user" role="tab" aria-controls="nav-user" aria-selected="true" onclick="__onSetup__();">User</a>
-						<a class="nav-item nav-link" id="nav-dev-tab" data-toggle="tab" href="#nav-dev" role="tab" aria-controls="nav-dev" aria-selected="false">Developer</a>
-					</div>
+		<div id="content" class="container-fluid flexColumn strechHeight">
+				<div class="nav nav-tabs" role="tablist">
+					<a class="nav-item nav-link active" id="nav-user-tab" data-toggle="tab" href="#nav-user" role="tab" aria-controls="nav-user" aria-selected="true" onclick="__onSetup__();">User</a>
+					<a class="nav-item nav-link" id="nav-dev-tab" data-toggle="tab" href="#nav-dev" role="tab" aria-controls="nav-dev" aria-selected="false">Developer</a>
 				</div>
-			</div>
-			<div class="tab-content strechDiv">
+			<div class="tab-content flexColumn flex-grow-1">
 				
-				<div class="tab-pane fade show active" id="nav-user" role="tabpanel" aria-labelledby="nav-user-tab">
-					<div id="graphHeading" class="row no-gutters">
-		  				<div class="col-3">
-		  					<h3 class="display-4 text-center">Untitled</h3>
-		  				</div>
-						<div class="col-9">
-							<div class="float-right" style="margin: 10px 0 0 0">
-					 			<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;" onclick="__zoomOut__();">-</button>
-								<button type="button" class="btn btn-outline-primary" onclick="__zoomHome__();">Home</button>
-								<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;" onclick="__zoomIn__();">+</button>
-							</div>
-			  			</div>
-			  		</div>
-					<div class="row no-gutters">
-		  				<div class="col-3" >
-		  					
-		  				</div>
-						<div class="col-9">
-				  			<canvas id="graph"></canvas>
-			  			</div>
-			  		</div>
+				<div class="tab-pane fade show active flex-grow-1" id="nav-user" role="tabpanel" aria-labelledby="nav-user-tab">
+					<div class="flexColumn" style="height: 100%">
+						<div id="graphHeading" class="row no-gutters">
+			  				<div class="col-3">
+			  					<!-- <input type="email" class="form-control" id="title_input"> -->
+			  					<!-- <h3 class="display-4 text-center" onclick="console.log('test');">Untitled</h3> -->
+			  				</div>
+							<div class="col-9">
+								<div class="float-right" style="margin: 10px 0 0 0">
+						 			<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;" onclick="__zoomOut__();">-</button>
+									<button type="button" class="btn btn-outline-primary" onclick="__zoomHome__();">Home</button>
+									<button type="button" class="btn btn-outline-primary btn-circle" style="margin: 0px 6px;" onclick="__zoomIn__();">+</button>
+								</div>
+				  			</div>
+				  		</div>
+					  	<canvas id="graph" class="flex-grow-1">
+				  	</div>
 	  			</div>
-				<div class="tab-pane fade strechDiv" id="nav-dev" role="tabpanel" aria-labelledby="nav-dev-tab">
-					<ul class="nav nav-tabs" role="tablist">
-						<li class="nav-item" role="presentation">
-							<a class="nav-link active text-white bg-dark" id="setup-tab" data-toggle="tab" href="#setup-tab-content" role="tab" aria-controls="setup-tab-content" aria-selected="true">setup.js</a>
+				<div class="tab-pane fade flex-grow-1" id="nav-dev" role="tabpanel" aria-labelledby="nav-dev-tab">
+					<div class="flexColumn" style="height: 100%">
+						<ul class="nav nav-tabs" role="tablist">
+							<li class="nav-item" role="presentation">
+								<a class="nav-link active text-white bg-dark" id="setup-tab" data-toggle="tab" href="#setup-tab-content" role="tab" aria-controls="setup-tab-content" aria-selected="true">setup.js</a>
+								</li>
+							<li class="nav-item" role="presentation">
+								<a class="nav-link text-white bg-dark" id="update-tab" data-toggle="tab" href="#update-tab-content" role="tab" aria-controls="update-tab-content" aria-selected="false">update.js</a>
 							</li>
-						<li class="nav-item" role="presentation">
-							<a class="nav-link text-white bg-dark" id="update-tab" data-toggle="tab" href="#update-tab-content" role="tab" aria-controls="update-tab-content" aria-selected="false">update.js</a>
-						</li>
-					</ul>
-					<div class="strechDiv">
-						<div class="tab-content" style="height: 70%;">
-							<div class="tab-pane fade show active strechDiv" id="setup-tab-content" role="tabpanel" aria-labelledby="setup-tab">
-								<div class="editor" id="setup-editor"></div>
+						</ul>
+						<div class="flex-grow-1">
+							<div class="tab-content flexColumn" style="height: 70%;">
+								<div class="tab-pane fade show active flex-grow-1" id="setup-tab-content" role="tabpanel" aria-labelledby="setup-tab">
+									<div class="editor" id="setup-editor"></div>
+								</div>
+								<div class="tab-pane fade flex-grow-1" id="update-tab-content" role="tabpanel" aria-labelledby="update-tab">
+									<div class="editor" id="update-editor"></div>
+								</div>
 							</div>
-							<div class="tab-pane fade strechDiv" id="update-tab-content" role="tabpanel" aria-labelledby="update-tab">
-								<div class="editor" id="update-editor"></div>
-							</div>
-						</div>
-						<div style="height: 30%;">
-							<div class="card strechDiv">
-								<div class="card-body strechDiv">
-									<h5 class="card-title border-bottom">Console<button type="button" class="btn btn-success" style="float: right;" onclick="__onSetup__();">Run</button><button type="button" class="btn btn-secondary" style="float: right; margin-right: 5px;" onclick="Console.clear();">Clear</button></h5>
-									<ul id="console" class="list-group list-group-flush" style="overflow-y: scroll; margin:0px; padding: 0px"></ul>
+							<div class="card" style="height: 30%;">
+								<div class="card-body flexColumn" style="height: 100%;">
+									<div class="border-bottom">
+										<span style="display: inline-block;">
+											<h5 class="card-title">Console</h5>
+										</span>
+										<button type="button" class="btn btn-success" style="float: right;" onclick="__onSetup__();">Run</button>
+										<button type="button" class="btn btn-secondary" style="float: right; margin-right: 5px;" onclick="Console.clear();">Clear</button>	
+									</div>
+									<div class="flexColumn flex-grow-1" style="overflow: hidden;">
+										<ul id="console" class="list-group list-group-flush flex-grow-1" style="overflow-y: auto;">
+										</ul>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -1091,6 +1094,8 @@
 
 			static _isInit = false;
 			static renderBuffer = new LinkedList();
+			static setupRenderBuffer = new LinkedList();
+			static useSetupBuffer = false;
 
 			static zoomHome() {
 				__CanvasGraph__.setZoom(__CanvasGraph__.zoomHomeValues[0], __CanvasGraph__.zoomHomeValues[1]);
@@ -1110,8 +1115,6 @@
 				Control.__resetControls();
 
 				__CanvasGraph__.setOnUpdate(onUpdate);
-
-				window.onresize = __CanvasGraph__.updateCanvasSize;
 				__CanvasGraph__.zoomHome();
 				__CanvasGraph__.updateCanvasSize();
 
@@ -1124,6 +1127,7 @@
 
 				let loop = async function () {
 					while (true) {
+						__CanvasGraph__.updateCanvasSize();	  
 						__CanvasGraph__._update();
 						__CanvasGraph__._render();
 						await __Utils__.sleep(__CanvasGraph__.UPDATE_WAIT_TIME);
@@ -1204,27 +1208,23 @@
 				__CanvasGraph__.inverseScaleMatrix = createD(1/__CanvasGraph__.zoomX, 1/__CanvasGraph__.zoomY, 1);
 				__CanvasGraph__.render();
 			}
-			
-			static measureCanvasSpace() {
-				let innerHeight = window.innerHeight;
-				let nav = document.getElementById("graphingNavBar");
-				let graphHeading = document.getElementById("graphHeading");
-				
-				let navHeight = nav.offsetHeight;
-				let graphHeadingHeight = graphHeading.offsetHeight;
-				let width = __CanvasGraph__.canvas.parentElement.offsetWidth;
-				return [width, innerHeight - navHeight - graphHeadingHeight];
-			}
 
 			static updateCanvasSize() {
-				let [width, height] = __CanvasGraph__.measureCanvasSpace();
+				let canvas = __CanvasGraph__.canvas;
+				let rect = __CanvasGraph__.canvas.getBoundingClientRect();
+
+				let height = window.innerHeight - rect.top;
+				let width = rect.right - rect.left;
+
+				if (Math.floor(Math.abs(canvas.width-width)) === 0 && Math.floor(Math.abs(canvas.height - height)) === 0)
+					return;
 				let smallerLength = width < height ? width : height ;
 
 				let homePoints = __CanvasGraph__.pointsAtHome;
 
 				__CanvasGraph__.correctionScale = smallerLength / homePoints ;
-				__CanvasGraph__.canvas.width = width;
-				__CanvasGraph__.canvas.height = height;
+				canvas.width = width;
+				canvas.height = height;
 				
 				let scaleHomeMat = createD(__CanvasGraph__.correctionScale, __CanvasGraph__.correctionScale, 1);
 				let offsetMatrix = __createOffsetMatrix__(width, height);
@@ -1322,17 +1322,27 @@
 					pointMatrix = mult(figure.transform, pointMatrix);
 					__CanvasGraph__.plotPoints(pointMatrix, args, graphTransform);
 				}
+				for (let item of __CanvasGraph__.setupRenderBuffer) {
+					let [pointMatrix, figure, args] = item;
+					pointMatrix = mult(figure.transform, pointMatrix);
+					__CanvasGraph__.plotPoints(pointMatrix, args, graphTransform);
+				}
 				Control.__plotControls(graphTransform);
 			}
 
 			static storePlottedPoints(pointMatrix, figure, args) {
+
 				if("link" in args) {
 					let link = args["link"];
 					if (link === null) 
 						throw "link cannot be null";
 					Control.__addControl(link, [pointMatrix, figure, args], true);
 				} else {
-					__CanvasGraph__.renderBuffer.enqueue([pointMatrix, figure, args]);
+					if (__CanvasGraph__.useSetupBuffer) {
+						__CanvasGraph__.setupRenderBuffer.enqueue([pointMatrix, figure, args]);
+					} else {
+						__CanvasGraph__.renderBuffer.enqueue([pointMatrix, figure, args]);	
+					}
 				}
 				
 			}
@@ -1505,11 +1515,15 @@
 		function __onSetup__() {
 			let setup_editor = ace.edit("setup-editor");
 			let update_editor = ace.edit("update-editor");
+
 			let setup_code = setup_editor.getValue();
 			let update_code = update_editor.getValue();
 			update_code = "__update__ = function () {" + update_code + "};";
 			try {
+				__CanvasGraph__.setupRenderBuffer.clear();
+				__CanvasGraph__.useSetupBuffer = true;
 				eval(setup_code);
+				__CanvasGraph__.useSetupBuffer = false;
 				eval(update_code);
 			} catch (e) {
 				Console.print(e.stack.toString(), "red");
