@@ -18,6 +18,14 @@
 			height: 100%;
 			margin: 0px;
 		}
+		
+		.code-tab {
+			border-color: #dee2e6 #dee2e6 #fff !important;
+		}
+
+		.code-tab.active {
+			border: 1px solid transparent !important;
+		}
 
 		.flexColumn {
 			display: flex;
@@ -52,8 +60,8 @@
 	<body>
 		<div id="content" class="container-fluid flexColumn strechHeight">
 				<div class="nav nav-tabs" role="tablist">
-					<a class="nav-item nav-link active" id="nav-user-tab" data-toggle="tab" href="#nav-user" role="tab" aria-controls="nav-user" aria-selected="true" onclick="__onSetup__();">User</a>
-					<a class="nav-item nav-link" id="nav-dev-tab" data-toggle="tab" href="#nav-dev" role="tab" aria-controls="nav-dev" aria-selected="false">Developer</a>
+					<a class="nav-item nav-link active" id="nav-user-tab" data-toggle="tab" href="#nav-user" role="tab" aria-controls="nav-user" aria-selected="true" onclick="__switchToUser__();">User</a>
+					<a class="nav-item nav-link" id="nav-dev-tab" data-toggle="tab" href="#nav-dev" role="tab" aria-controls="nav-dev" aria-selected="false" onclick="__switchToDeveloper__();">Developer</a>
 				</div>
 			<div class="tab-content flexColumn flex-grow-1">
 				
@@ -79,10 +87,10 @@
 					<div class="flexColumn" style="height: 100%">
 						<ul class="nav nav-tabs" role="tablist">
 							<li class="nav-item" role="presentation">
-								<a class="nav-link active text-white bg-dark" id="setup-tab" data-toggle="tab" href="#setup-tab-content" role="tab" aria-controls="setup-tab-content" aria-selected="true">setup.js</a>
+								<a class="nav-link active text-white bg-dark code-tab" id="setup-tab" data-toggle="tab" href="#setup-tab-content" role="tab" aria-controls="setup-tab-content" aria-selected="true">setup.js</a>
 								</li>
 							<li class="nav-item" role="presentation">
-								<a class="nav-link text-white bg-dark" id="update-tab" data-toggle="tab" href="#update-tab-content" role="tab" aria-controls="update-tab-content" aria-selected="false">update.js</a>
+								<a class="nav-link text-white bg-dark code-tab" id="update-tab" data-toggle="tab" href="#update-tab-content" role="tab" aria-controls="update-tab-content" aria-selected="false">update.js</a>
 							</li>
 						</ul>
 						<div class="flex-grow-1">
@@ -865,7 +873,9 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 	<script type="text/javascript">
 		class Console {
-			static __maxEntries__ = 100;
+			static __staticDeclarations__() {
+				Console.__maxEntries__ = 100;
+			}
 
 			static print(msg, color="black") {
 				if (msg !== null)
@@ -888,8 +898,9 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				let console = document.getElementById("console");
 				console.innerHTML = "";
 			}
-
 		}
+		Console.__staticDeclarations__();
+
 
 		class __MouseHandler__ {
 			constructor(checkInBounds=null, onMove=null, onDown=null, onUp=null) {
@@ -969,17 +980,19 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 		}
 
 		class Control extends __MouseHandler__ {
-			static CONTROL_RADIUS = 10;
-			static allControls = null;
-			static plottableControls = new LinkedList();
-			static plottableControlsSet = null; 
+			static __staticDeclarations__() {
+				Control.CONTROL_RADIUS = 10;
+				Control.allControls = null;
+				Control.plottableControls = new LinkedList();
+				Control.plottableControlsSet = null; 
+			}
+
 
 			static __resetControls() {
 				Control.allControls = {};
 				Control.plottableControls.clear();
 				Control.plottableControlsSet = {};				
 				__CanvasGraph__.mouseHandler.mouseHandlerList.clear();
-				// __CanvasGraph__.update();
 			}
 
 			static __addControl(key, content, plottable=false) {
@@ -1039,7 +1052,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			getTransformedPoints(x, y) {
 				let touchP = vector(x, y, 1);
 				let graphTransform = __CanvasGraph__.getInverseTransform();
-				
+
 				touchP = mult(graphTransform, touchP); 
 				touchP = mult(this.figure.inverseTransform, touchP);
 				x = touchP.get(0, 0);
@@ -1050,7 +1063,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			checkInBounds (x, y) {
 				let [rad_x, rad_y] = this.getTransformedPoints(Control.CONTROL_RADIUS+x, y);
 				[x, y] = this.getTransformedPoints(x, y);
-				
+
 				let x_diff = rad_x - x;
 				let y_diff = rad_y - y;
 
@@ -1081,38 +1094,46 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				return [this.pointMatrix, this.figure, this.args];
 			}
 		}
+		Control.__staticDeclarations__();
+		
+
+
+
+
 
 		class __CanvasGraph__ {
-			static UPDATE_WAIT_TIME = 50;
+			static __staticDeclarations__() {
+				__CanvasGraph__.UPDATE_WAIT_TIME = 50;
 
-			static canvas;
-			static graph2D;
-			static mouseHandler;
+				__CanvasGraph__.canvas = null;
+				__CanvasGraph__.graph2D = null;
+				__CanvasGraph__.mouseHandler = null;
 
-			static zoomX  =  0;
-			static zoomY  =  0;
-			static correctionScale = 1;
-			static xOffset = 0;
-			static yOffset = 0;
-			static offsetMatrix = new Matrix(3, 3);
-			static scaleMatrix  = new Matrix(3, 3);
-			static transMatrix  = new Matrix(3, 3);
-			static inverseOffsetMatrix = new Matrix(3, 3);
-			static inverseScaleMatrix  = new Matrix(3, 3);
-			static inverseTransMatrix  = new Matrix(3, 3);
-			
-			static pointsAtHome = 10;
-			static zoomHomeValues = [1, 1];
-			
-			static onUpdate = null;
-			
-			static renderTriggered = false;
-			static updateTriggered = false;
+				__CanvasGraph__.zoomX  =  0;
+				__CanvasGraph__.zoomY  =  0;
+				__CanvasGraph__.correctionScale = 1;
+				__CanvasGraph__.xOffset = 0;
+				__CanvasGraph__.yOffset = 0;
+				__CanvasGraph__.offsetMatrix = new Matrix(3, 3);
+				__CanvasGraph__.scaleMatrix  = new Matrix(3, 3);
+				__CanvasGraph__.transMatrix  = new Matrix(3, 3);
+				__CanvasGraph__.inverseOffsetMatrix = new Matrix(3, 3);
+				__CanvasGraph__.inverseScaleMatrix  = new Matrix(3, 3);
+				__CanvasGraph__.inverseTransMatrix  = new Matrix(3, 3);
+				
+				__CanvasGraph__.pointsAtHome = 10;
+				__CanvasGraph__.zoomHomeValues = [1, 1];
+				
+				__CanvasGraph__.onUpdate = null;
+				
+				__CanvasGraph__.renderTriggered = false;
+				__CanvasGraph__.updateTriggered = false;
 
-			static _isInit = false;
-			static renderBuffer = new LinkedList();
-			static setupRenderBuffer = new LinkedList();
-			static useSetupBuffer = false;
+				__CanvasGraph__._isInit = false;
+				__CanvasGraph__.renderBuffer = new LinkedList();
+				__CanvasGraph__.setupRenderBuffer = new LinkedList();
+				__CanvasGraph__.useSetupBuffer = false;
+			}
 
 			static zoomHome() {
 				__CanvasGraph__.setZoom(__CanvasGraph__.zoomHomeValues[0], __CanvasGraph__.zoomHomeValues[1]);
@@ -1259,7 +1280,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			}
 
 			static getInverseTransform() {
-				return mult(__CanvasGraph__.inverseScaleMatrix, __CanvasGraph__.inverseTransMatrix, __CanvasGraph__.inverseOffsetMatrix);
+				return mult(__CanvasGraph__.inverseTransMatrix, __CanvasGraph__.inverseScaleMatrix, __CanvasGraph__.inverseOffsetMatrix);
 			}
 
 			static setColor(fill, stroke=fill) {
@@ -1364,6 +1385,8 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				
 			}
 		}
+		__CanvasGraph__.__staticDeclarations__();
+		
 
 		class Figure {
 			
@@ -1513,6 +1536,20 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 		function __zoomOut__() {
 			__CanvasGraph__.setZoom(__CanvasGraph__.zoomX * 1/2, __CanvasGraph__.zoomY * 1/2);
 		}
+		let __tabState__ = "User";
+		function __switchToDeveloper__ () {
+			if(__tabState__ === "User") {
+				__tabState__ = "Dev";
+			}
+		}
+		function __switchToUser__ () {
+			if(__tabState__ === "Dev") {
+				__onSetup__();
+				__tabState__ = "User";
+			}
+		}
+
+
 		function __initEditors__ () {
 			let setup_editor = ace.edit("setup-editor");
 		    setup_editor.setTheme("ace/theme/monokai");
