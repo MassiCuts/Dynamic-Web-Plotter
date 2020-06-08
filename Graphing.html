@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<title>Dynamic Graphing</title>
+		<title>Dynamic Web Plot</title>
 		<meta charset="utf-8">
 	    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
@@ -66,7 +66,7 @@
 				<div class="nav nav-tabs" role="tablist" style="padding-top: 5px;">
 					<a class="nav-item nav-link active" id="nav-user-tab" data-toggle="tab" href="#nav-user" role="tab" aria-controls="nav-user" aria-selected="true" onclick="__switchToUser__();">User</a>
 					<a class="nav-item nav-link" id="nav-dev-tab" data-toggle="tab" href="#nav-dev" role="tab" aria-controls="nav-dev" aria-selected="false" onclick="__switchToDeveloper__();">Developer</a>
-					<label class="btn btn-success" style="margin-right: 5px;" onclick="__save__();">
+					<label class="btn btn-success" style="margin-left: 10px; margin-right: 5px;" onclick="__save__();">
 					    Save Plot
 					</label>
 					<label class="btn btn-secondary">
@@ -104,8 +104,8 @@
 								<a class="nav-link text-white bg-dark code-tab" id="update-tab" data-toggle="tab" href="#update-tab-content" role="tab" aria-controls="update-tab-content" aria-selected="false">update.js</a>
 							</li>
 						</ul>
-						<div class="flex-grow-1">
-							<div class="tab-content flexColumn" style="height: 70%;">
+						<div class="flexColumn flex-grow-1">
+							<div class="tab-content flexColumn flex-grow-1">
 								<div class="tab-pane fade show active flex-grow-1" id="setup-tab-content" role="tabpanel" aria-labelledby="setup-tab">
 									<div class="editor" id="setup-editor">var figure = new Figure();
 let args = {link: "joe", showLines:true, pointColor: "purple",
@@ -122,14 +122,14 @@ let args = {pointColor: "blue", showLines: true};
 figure.plotXY(arrays[1], arrays[0], args);</div>
 								</div>
 							</div>
-							<div class="card" style="height: 30%;">
+							<div class="card" style="height: 250px;">
 								<div class="card-body flexColumn" style="height: 100%;">
-									<div class="border-bottom">
+									<div class="border-bottom" style="padding-bottom: 5px;">
 										<span style="display: inline-block;">
 											<h5 class="card-title">Console</h5>
 										</span>
-										<button type="button" class="btn btn-success" style="float: right;" onclick="__onSetup__();">Run</button>
-										<button type="button" class="btn btn-secondary" style="float: right; margin-right: 5px;" onclick="Console.clear();">Clear</button>
+										<button type="button" class="btn btn-success" style="float: right;" onclick="__onSetup__();">Test Run</button>
+										<button type="button" class="btn btn-secondary" style="float: right; margin-right: 5px;" onclick="Console.clear();">Clear Console</button>
 										<button type="button" class="btn text-white bg-danger" style="float: right; margin-right: 5px;" onclick="Control.__resetControls();">Reset Controls</button>	
 									</div>
 									<div class="flexColumn flex-grow-1" style="overflow: hidden;">
@@ -897,7 +897,6 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				} else {
 					msg = msg.toString();
 				}
-				msg = __escapeHtml__(msg);
 
 				let console = document.getElementById("console");
 				let childAmt = console.childElementCount;
@@ -1341,10 +1340,9 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				return pointArgs;
 			}
 
-			static plotPoints(pointMatrix, args={}, transform=__CanvasGraph__.getTransform()) {
+			static plotPoints(pointMatrix, pointArgs={}, transform=__CanvasGraph__.getTransform()) {
 				pointMatrix = mult(transform, pointMatrix);
 
-				let pointArgs = __CanvasGraph__.getPointArgs(args);
 
 				if (pointArgs.showLines && pointMatrix.columns > 1) {
 					__CanvasGraph__.setColor(pointArgs.lineColor);
@@ -1388,11 +1386,9 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			}
 
 			static storePlottedPoints(pointMatrix, figure, args) {
-
-				if("link" in args) {
-					let link = args["link"];
-					if (link === null) 
-						throw "link cannot be null";
+				
+				let link = args["link"];
+				if(link !== null) {
 					Control.__addControl(link, [pointMatrix, figure, args], true);
 				} else {
 					if (__CanvasGraph__.useSetupBuffer) {
@@ -1518,7 +1514,8 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					throw "Cannot plot 2D points on a 3D figure";
 
 				let pointMatrix = Figure.get2DPointMatrix(x, y);
-				__CanvasGraph__.storePlottedPoints(pointMatrix, this, args);
+				let pointArgs = __CanvasGraph__.getPointArgs(args);
+				__CanvasGraph__.storePlottedPoints(pointMatrix, this, pointArgs);
 			}
 
 			plotXYZ(x, y=null, z=null, args={}) {
@@ -1527,7 +1524,8 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				if("link" in args)
 					throw "Cannot link a control to 3D points";
 				let pointMatrix = Figure.get3DPointMatrix(x, y, z);
-				__CanvasGraph__.storePlottedPoints(pointMatrix, this, args);
+				let pointArgs = __CanvasGraph__.getPointArgs(args);
+				__CanvasGraph__.storePlottedPoints(pointMatrix, this, pointArgs);
 			}
 
 			plotAxis(size=1) {
@@ -1546,6 +1544,15 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 	
 	<!-- Configure Script -->
 	<script type="text/javascript">
+		// TODO :
+		// Add animation feature & argument
+		// Add plotting text
+		// Add plotting web images
+		// Add controls menu
+		// Make element borders draggable
+
+
+
 		function __zoomIn__() {
 			__CanvasGraph__.setZoom(__CanvasGraph__.zoomX * 2, __CanvasGraph__.zoomY * 2);
 		}
@@ -1601,11 +1608,14 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			});
 		}
 
-		async function __load__(e) {
-			var file = e.target.files[0];
+		function __fileOpen__(e) {
+			let file = e.target.files[0];
 			if (!file)
 				return;
-			
+			__load__(file);
+		}
+
+		async function __load__(file) {
 			let contents;
 			try {
 				contents = await __readFile__(file);
@@ -1635,11 +1645,24 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				}
 				__CanvasGraph__.update();
 			} catch (e) {
-				console.log(e);
 				throw "Could not properly load file!";
 			}
 		}
-		document.getElementById('file-open-form').addEventListener('change', __load__, false);
+		document.getElementById('file-open-form').addEventListener('change', __fileOpen__, false);
+		
+		// document.body.ondragover = function(e) {
+		// 	e.preventDefault();
+		// }
+
+		// document.body.ondrop = function (e) {
+		// 	const dT = new DataTransfer();
+		// 	dT.items.add(evt.dataTransfer.files[0]);
+		// 	let file = dT.files[0];
+			
+		// 	if (!file)
+		// 		return;
+		// 	__load__(file);
+		// }
 
 		// Save handler
 		function __save__() {
@@ -1684,8 +1707,17 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			}
 		}, false);
 
-		let __update__ = function () {};
+		let __printError__ = function (e) {
+			if (e === null || e === undefined) {
+				Console.print(e.stack.toString(), "Unknown Error Occurred");	
+			} else if (e.hasOwnProperty("stack") && e.stack !== undefined && e.stack !== null) {
+				Console.print(e.stack.toString(), "red");
+			} else {
+				Console.print(e, "red");
+			}
+		}
 
+		let __update__ = function () {};
 
 		function __onSetup__() {
 			let setup_editor = ace.edit("setup-editor");
@@ -1695,19 +1727,24 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			let update_code = update_editor.getValue();
 			let total_code;
 			total_code = "{";
-			total_code += 	"__CanvasGraph__.setupRenderBuffer.clear();";
-			total_code += 	"__CanvasGraph__.useSetupBuffer = true;";
-			total_code += 	setup_code;
-			total_code += 	"__CanvasGraph__.useSetupBuffer = false;";
-			total_code += 	"__update__ = function () {";
-			total_code += 		update_code;
-			total_code += 	"};";
+			total_code += 	"let document = undefined;";
+			total_code += 	"let window   = undefined;";
+			total_code += 	"let $        = undefined;";
+			total_code += 	"{";
+			total_code += 		"__CanvasGraph__.setupRenderBuffer.clear();";
+			total_code += 		"__CanvasGraph__.useSetupBuffer = true;";
+			total_code += 		setup_code;
+			total_code += 		"__CanvasGraph__.useSetupBuffer = false;";
+			total_code += 		"__update__ = function () {";
+			total_code += 			update_code;
+			total_code += 		"};";
+			total_code += 	"}";
 			total_code += "}";
 
 			try {
-				$.globalEval(total_code);
+				eval(total_code);
 			} catch (e) {
-				Console.print(e.stack.toString(), "red");
+				__printError__(e);
 			}
 			__CanvasGraph__.update();	
 		}
@@ -1716,7 +1753,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			try {
 				__update__();				
 			} catch (e) {
-				Console.print(e.stack.toString(), "red");
+				__printError__(e);
 			}
 		}
 		__CanvasGraph__.init(__onUpdate__, __onSetup__);
