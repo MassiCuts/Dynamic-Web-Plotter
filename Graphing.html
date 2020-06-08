@@ -128,9 +128,10 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 										<span style="display: inline-block;">
 											<h5 class="card-title">Console</h5>
 										</span>
-										<button type="button" class="btn btn-success" style="float: right;" onclick="__onSetup__();">Test Run</button>
-										<button type="button" class="btn btn-secondary" style="float: right; margin-right: 5px;" onclick="Console.clear();">Clear Console</button>
-										<button type="button" class="btn text-white bg-danger" style="float: right; margin-right: 5px;" onclick="Control.__resetControls();">Reset Controls</button>	
+										<button type="button" class="btn btn-success" style="float: right;" onclick="__alert__('Dynamic Web Plot', 'Started Test Run');__onSetup__();">Test Run</button>
+										<button type="button" class="btn btn-secondary" style="float: right; margin-right: 5px;" onclick="__alert__('Dynamic Web Plot', 'Console is cleared'); Console.clear();">Clear Console</button>
+										<button type="button" class="btn text-white bg-danger" style="float: right; margin-right: 5px;" onclick="
+				__alert__('Dynamic Web Plot', 'All Controls are resetted'); Control.__resetControls();">Reset Controls</button>	
 									</div>
 									<div class="flexColumn flex-grow-1" style="overflow: hidden;">
 										<ul id="console" class="list-group list-group-flush flex-grow-1" style="overflow-y: auto;">
@@ -143,6 +144,21 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				</div>
 	  		</div>
   		</div>
+  		<div style="position: fixed; top: 0; right: 0;">
+			<div aria-live="polite" aria-atomic="true" style="min-height: 200px;">
+				<div class="toast" style="position: absolute; top: 0; right: 0; width: 0px; margin: 10px;">
+					<div class="toast-header">
+						<strong class="mr-auto" id="alert_title"></strong>
+						<small id="alert_time">1 sec ago</small>
+						<button type="button" class="ml-2 mb-1 close" data-dismiss="toast" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<div id="alert_body" class="toast-body">
+					</div>
+				</div>
+			</div>
+		</div>
 	</body>
 	<script src="https://pagecdn.io/lib/ace/1.4.5/ace.js" integrity="sha256-5Xkhn3k/1rbXB+Q/DX/2RuAtaB4dRRyQvMs83prFjpM=" crossorigin="anonymous"></script>
 	
@@ -1550,7 +1566,26 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 		// Add plotting web images
 		// Add controls menu
 		// Make element borders draggable
+		// Fix Boostrap Toasts for alerts
+		// Possibly integrate with quacc
 
+
+
+
+		$('.toast').toast({
+          delay: 3000
+        });
+		function __alert__(msgTitle, msgBody) {
+			let title = document.getElementById("alert_title"); 
+			let body = document.getElementById("alert_body");
+			title.innerText = msgTitle;
+			body.innerText = msgBody;
+			$('.toast').css("width", "300px");
+	        $('.toast').on("hidden.bs.toast", () => {
+	          $('this').width = 0;
+	        });
+			$('.toast').toast('show');
+		}
 
 
 		function __zoomIn__() {
@@ -1571,6 +1606,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 		function __switchToUser__ () {
 			if(__tabState__ === "Dev") {
 				__onSetup__();
+				__alert__("Dynamic Web Plot", "Updated Plots");
 				__tabState__ = "User";
 			}
 		}
@@ -1621,7 +1657,8 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				contents = await __readFile__(file);
 				contents = JSON.parse(contents);
 			} catch (err) {
-				throw "Could not read file!";
+				__alert__("Dynamic Web Plot", "Could not read file!");
+				return;
 			}
 			try {
 				let controls = contents["controls"];
@@ -1644,8 +1681,10 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					value[1] = newValue[1];
 				}
 				__CanvasGraph__.update();
+				__alert__("Dynamic Web Plot", "Plot is loaded");
 			} catch (e) {
-				throw "Could not properly load file!";
+				__alert__("Dynamic Web Plot", "Could not properly load file!");
+				return;
 			}
 		}
 		document.getElementById('file-open-form').addEventListener('change', __fileOpen__, false);
@@ -1679,7 +1718,8 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 			toSave = JSON.stringify(toSave);
 
-			__download__(toSave, "Untitled-DyPlot", 'application/json;charset=utf-8');			
+			__download__(toSave, "Untitled-DyPlot", 'application/json;charset=utf-8');
+			__alert__("Dynamic Web Plot", "Saved");			
 		}
 
 		function __download__(data, filename, type) {
