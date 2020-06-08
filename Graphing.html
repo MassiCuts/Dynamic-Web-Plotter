@@ -1,67 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-	<title>Dynamic Graphing</title>
-	<meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-	
-	<!-- Bootstrap -->
-	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-	<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
-	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+	<head>
+		<title>Dynamic Graphing</title>
+		<meta charset="utf-8">
+	    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-	<script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js></script>
-	
-	<style>
-		body, html {
-			height: 100%;
-			margin: 0px;
-		}
-		
-		.code-tab {
-			border-color: #dee2e6 #dee2e6 #fff !important;
-		}
+		<!-- Bootstrap -->
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+		<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
 
-		.code-tab.active {
-			border: 1px solid transparent !important;
-		}
+		<script src=https://cdnjs.cloudflare.com/ajax/libs/mathjs/3.3.0/math.min.js></script>
 
-		.flexColumn {
-			display: flex;
-			flex-flow: column;
-		}
+		<style>
+			body, html {
+				height: 100%;
+				margin: 0px;
+			}
+			
+			.code-tab {
+				border-color: #dee2e6 #dee2e6 #fff !important;
+			}
 
-		.strechHeight {
-			height: 100%;	
-		}
-		
-		#graph {
-			background-color: white;
-		}
+			.code-tab.active {
+				border: 1px solid transparent !important;
+			}
 
-		.editor { 
-	        position: relative;
-	        width: 100%;
-	        height: 100%;
-	    }
+			.console-output {
+				white-space: pre-wrap;
+			}
 
-		.btn-circle { 
-            width: 30px; 
-            height: 30px;
-            padding: 0px;
-            border-radius: 15px; 
-            font-size: 14px; 
-            text-align: center; 
-        } 
+			.flexColumn {
+				display: flex;
+				flex-flow: column;
+			}
 
-	</style>
-</head>
+			.strechHeight {
+				height: 100%;	
+			}
+			
+			#graph {
+				background-color: white;
+			}
+
+			.editor { 
+		        position: relative;
+		        width: 100%;
+		        height: 100%;
+		    }
+
+			.btn-circle { 
+	            width: 30px; 
+	            height: 30px;
+	            padding: 0px;
+	            border-radius: 15px; 
+	            font-size: 14px; 
+	            text-align: center; 
+	        } 
+
+		</style>
+	</head>
 	<body>
 		<div id="content" class="container-fluid flexColumn strechHeight">
-				<div class="nav nav-tabs" role="tablist">
+				<div class="nav nav-tabs" role="tablist" style="padding-top: 5px;">
 					<a class="nav-item nav-link active" id="nav-user-tab" data-toggle="tab" href="#nav-user" role="tab" aria-controls="nav-user" aria-selected="true" onclick="__switchToUser__();">User</a>
 					<a class="nav-item nav-link" id="nav-dev-tab" data-toggle="tab" href="#nav-dev" role="tab" aria-controls="nav-dev" aria-selected="false" onclick="__switchToDeveloper__();">Developer</a>
+					<label class="btn btn-success" style="margin-right: 5px;" onclick="__save__();">
+					    Save Plot
+					</label>
+					<label class="btn btn-secondary">
+					    Open Plot <input type="file" id="file-open-form" hidden>
+					</label>
 				</div>
 			<div class="tab-content flexColumn flex-grow-1">
 				
@@ -69,6 +79,7 @@
 					<div class="flexColumn" style="height: 100%">
 						<div id="graphHeading" class="row no-gutters">
 			  				<div class="col-3">
+
 			  					<!-- <input type="email" class="form-control" id="title_input"> -->
 			  					<!-- <h3 class="display-4 text-center" onclick="console.log('test');">Untitled</h3> -->
 			  				</div>
@@ -872,14 +883,22 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 
 	<script type="text/javascript">
+
 		class Console {
 			static __staticDeclarations__() {
 				Console.__maxEntries__ = 100;
 			}
 
 			static print(msg, color="black") {
-				if (msg !== null)
+				if (msg === null) {
+					msg = "null";
+				} else if (msg === undefined) {
+					msg = "undefined";
+				} else {
 					msg = msg.toString();
+				}
+				msg = __escapeHtml__(msg);
+
 				let console = document.getElementById("console");
 				let childAmt = console.childElementCount;
 				if (childAmt >= Console.__maxEntries__) {
@@ -888,7 +907,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 						console.removeChild(descendents[i]);
 				}
 				let elem = document.createElement("LI"); 
-				elem.setAttribute("class", "list-group-item");
+				elem.setAttribute("class", "list-group-item console-output");
 				elem.setAttribute("style", "color: " + color + ";");
 				elem.innerText = msg;
 				console.appendChild(elem);
@@ -982,9 +1001,9 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 		class Control extends __MouseHandler__ {
 			static __staticDeclarations__() {
 				Control.CONTROL_RADIUS = 10;
-				Control.allControls = null;
+				Control.allControls = {};
 				Control.plottableControls = new LinkedList();
-				Control.plottableControlsSet = null; 
+				Control.plottableControlsSet = {}; 
 			}
 
 
@@ -1386,7 +1405,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			}
 		}
 		__CanvasGraph__.__staticDeclarations__();
-		
+
 
 		class Figure {
 			
@@ -1549,7 +1568,6 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			}
 		}
 
-
 		function __initEditors__ () {
 			let setup_editor = ace.edit("setup-editor");
 		    setup_editor.setTheme("ace/theme/monokai");
@@ -1563,6 +1581,109 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 		}
 		__initEditors__ ();
 
+		function __escapeHtml__(unsafe) {
+		    return unsafe
+		         .replace(/&/g, "&amp;")
+		         .replace(/</g, "&lt;")
+		         .replace(/>/g, "&gt;")
+		         .replace(/"/g, "&quot;")
+		         .replace(/'/g, "&#039;");
+		}
+		
+		function __readFile__(file) {
+			return new Promise((resolve, reject) => {
+				let reader = new FileReader();
+				reader.onload = function(e) {
+					resolve(e.target.result);
+				};
+				reader.onerror = reject;
+				reader.readAsText(file);
+			});
+		}
+
+		async function __load__(e) {
+			var file = e.target.files[0];
+			if (!file)
+				return;
+			
+			let contents;
+			try {
+				contents = await __readFile__(file);
+				contents = JSON.parse(contents);
+			} catch (err) {
+				throw "Could not read file!";
+			}
+			try {
+				let controls = contents["controls"];
+				let setup_code =  contents["setup.js"];
+				let update_code = contents["update.js"];
+
+				let setup_editor = ace.edit("setup-editor");
+				setup_editor.setValue(setup_code);
+
+				let update_editor = ace.edit("update-editor");
+				update_editor.setValue(update_code);
+
+				__onSetup__();
+				__CanvasGraph__._update();
+				
+				for (key in controls) {
+					let value = Control.get(key);
+					let newValue = controls[key];
+					value[0] = newValue[0];
+					value[1] = newValue[1];
+				}
+				__CanvasGraph__.update();
+			} catch (e) {
+				console.log(e);
+				throw "Could not properly load file!";
+			}
+		}
+		document.getElementById('file-open-form').addEventListener('change', __load__, false);
+
+		// Save handler
+		function __save__() {
+			let setup_editor = ace.edit("setup-editor");
+			let update_editor = ace.edit("update-editor");
+
+			let setup_code = setup_editor.getValue();
+			let update_code = update_editor.getValue();
+
+			let toSave = {};
+			toSave["controls"] = Control.allControls; 
+			toSave["setup.js"] = setup_code;
+			toSave["update.js"] = update_code;
+
+			toSave = JSON.stringify(toSave);
+
+			__download__(toSave, "Untitled-DyPlot", 'application/json;charset=utf-8');			
+		}
+
+		function __download__(data, filename, type) {
+			let file = new Blob([data], {type: type});
+			if (window.navigator.msSaveOrOpenBlob) // IE10+
+				window.navigator.msSaveOrOpenBlob(file, filename);
+			else { // Others
+				let a = document.createElement("a"),
+				url = URL.createObjectURL(file);
+				a.href = url;
+				a.download = filename;
+				document.body.appendChild(a);
+				a.click();
+				setTimeout(function() {
+					document.body.removeChild(a);
+					window.URL.revokeObjectURL(url);  
+				}, 0); 
+			}
+		}
+
+		document.addEventListener("keydown", function(e) {
+			if ((window.navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey)  && e.keyCode == 83) {
+				e.preventDefault();
+				__save__();	
+			}
+		}, false);
+
 		let __update__ = function () {};
 
 
@@ -1572,13 +1693,19 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 			let setup_code = setup_editor.getValue();
 			let update_code = update_editor.getValue();
-			update_code = "__update__ = function () {" + update_code + "};";
+			let total_code;
+			total_code = "{";
+			total_code += 	"__CanvasGraph__.setupRenderBuffer.clear();";
+			total_code += 	"__CanvasGraph__.useSetupBuffer = true;";
+			total_code += 	setup_code;
+			total_code += 	"__CanvasGraph__.useSetupBuffer = false;";
+			total_code += 	"__update__ = function () {";
+			total_code += 		update_code;
+			total_code += 	"};";
+			total_code += "}";
+
 			try {
-				__CanvasGraph__.setupRenderBuffer.clear();
-				__CanvasGraph__.useSetupBuffer = true;
-				(1, eval)(setup_code);
-				__CanvasGraph__.useSetupBuffer = false;
-				eval(update_code);
+				$.globalEval(total_code);
 			} catch (e) {
 				Console.print(e.stack.toString(), "red");
 			}
