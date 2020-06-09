@@ -1565,6 +1565,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 		// Add plotting text
 		// Add plotting web images
 		// Add controls menu
+		// Allow "mouse scroll" to control zoom 
 		// Make element borders draggable
 		// Fix Boostrap Toasts for alerts
 		// Possibly integrate with quacc
@@ -1766,7 +1767,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			let setup_code = setup_editor.getValue();
 			let update_code = update_editor.getValue();
 			let total_code;
-			total_code = "{";
+			total_code = "(function () {";
 			total_code += 	"let document = undefined;";
 			total_code += 	"let window   = undefined;";
 			total_code += 	"let $        = undefined;";
@@ -1779,11 +1780,12 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			total_code += 			update_code;
 			total_code += 		"};";
 			total_code += 	"}";
-			total_code += "}";
+			total_code += "})();";
 
 			try {
 				eval(total_code);
 			} catch (e) {
+				__update__ = function() {};
 				__printError__(e);
 			}
 			__CanvasGraph__.update();	
