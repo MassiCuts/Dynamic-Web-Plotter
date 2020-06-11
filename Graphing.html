@@ -108,9 +108,11 @@
 							<div class="tab-content flexColumn flex-grow-1">
 								<div class="tab-pane fade show active flex-grow-1" id="setup-tab-content" role="tabpanel" aria-labelledby="setup-tab">
 									<div class="editor" id="setup-editor">var figure = new dyplot.Figure();
+figure.plotAxis(5);
 let args = {link: "joe", showLines:true, pointColor: "purple",
                 lineColor: "red", lineDash:[1, 2, 3]};
-figure.plotXY([1, 0], [0, 1], args);</div>
+figure.plotXY([1, 0], [0, 2], args);
+figure.plotText("Mirror", 1, 1);</div>
 								</div>
 								<div class="tab-pane fade flex-grow-1" id="update-tab-content" role="tabpanel" aria-labelledby="update-tab">
 									<div class="editor" id="update-editor">dyplot.Console.clear();
@@ -1182,8 +1184,21 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				static __plotControls(graphTransform) {
 					for (let control of Control.plottableControls) {
 						let [pointMatrix, figure, args] = control.contents;
-						pointMatrix = mult(figure.transform, pointMatrix);
-						__CanvasGraph__.plotPoints(pointMatrix, args, graphTransform);
+						let text = args["text"];
+						if (text !== null && text !== undefined) {
+							let textOrder = args["textOrder"];
+							if (textOrder === "front") {
+								__CanvasGraph__.plotPoints(pointMatrix, args, figure.transform, graphTransform);
+								__CanvasGraph__.plotTextPoints(pointMatrix, args, figure.transform, graphTransform);
+							} else if (textOrder === "back") {
+								__CanvasGraph__.plotTextPoints(pointMatrix, args, figure.transform, graphTransform);
+								__CanvasGraph__.plotPoints(pointMatrix, args, figure.transform, graphTransform);	
+							} else {
+								__CanvasGraph__.plotPoints(pointMatrix, args, figure.transform, graphTransform);
+							}
+						} else {
+							__CanvasGraph__.plotPoints(pointMatrix, args, figure.transform, graphTransform);
+						}
 					}
 				}
 
@@ -1294,8 +1309,30 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					__CanvasGraph__._isInit = false;
 					__CanvasGraph__.renderBuffer = new LinkedList();
 					__CanvasGraph__.setupRenderBuffer = new LinkedList();
+
+					__CanvasGraph__.renderBackTextBuffer = new LinkedList();
+					__CanvasGraph__.setupBackTextRenderBuffer = new LinkedList();
+
+					__CanvasGraph__.renderFrontTextBuffer = new LinkedList();
+					__CanvasGraph__.setupFrontTextRenderBuffer = new LinkedList();
+
 					__CanvasGraph__.useSetupBuffer = false;
 				}
+
+				static clearRenderBuffer() {
+					__CanvasGraph__.renderBuffer.clear();
+					__CanvasGraph__.renderBackTextBuffer.clear();
+					__CanvasGraph__.renderFrontTextBuffer.clear();
+				}
+
+				static clearSetupBuffer() {
+					__CanvasGraph__.setupRenderBuffer.clear();
+					__CanvasGraph__.setupBackTextRenderBuffer.clear();
+					__CanvasGraph__.setupFrontTextRenderBuffer.clear();
+				}
+
+				// static clearRender
+
 
 				static zoomHome() {
 					__CanvasGraph__.setZoom(__CanvasGraph__.zoomHomeValues[0], __CanvasGraph__.zoomHomeValues[1]);
@@ -1377,7 +1414,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					if(!__CanvasGraph__.updateTriggered)
 						return;
 					__CanvasGraph__.updateTriggered = false;
-					__CanvasGraph__.renderBuffer.clear();
+					__CanvasGraph__.clearRenderBuffer();
 					__CanvasGraph__.onUpdate();
 				}
 
@@ -1451,6 +1488,12 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					graph2D.strokeStyle = stroke;
 				}
 
+				static plotText(text, x, y, size) {
+					let graph2D = __CanvasGraph__.graph2D;
+					graph2D.font = "" + size + "px Arial";
+					graph2D.fillText(text, x, y);
+				}
+
 				static plotPoint(x, y, radius=5) {
 					let graph2D = __CanvasGraph__.graph2D;
 					graph2D.beginPath();
@@ -1460,7 +1503,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					graph2D.stroke();
 				}
 
-				static getPointArgs(args=null) { 
+				static getPointArgs(args, defaultArgs={}) { 
 					let defaultRadius = ("link" in args) ? 10 : 5;
 					let pointArgs = {
 						link:null,
@@ -1471,7 +1514,20 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 						closePath : false,
 						lineColor:"black",
 						lineDash:[],
-						lineWidth:1
+						lineWidth:1,
+						text: null,
+						textColor: "black",
+						textOrder: "front",
+						textSize: 30,
+						textResize: true,
+						textOffset: [0, 0]
+					}
+
+					for (let key in defaultArgs) {
+					    if (pointArgs.hasOwnProperty(key))
+							pointArgs[key] = defaultArgs[key];
+						else
+							throw 'The arg "' + key + '" is not defined.';
 					}
 
 					for (let key in args) {
@@ -1484,7 +1540,9 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					return pointArgs;
 				}
 
-				static plotPoints(pointMatrix, pointArgs={}, transform=__CanvasGraph__.getTransform()) {
+				static plotPoints(pointMatrix, pointArgs, figureTransform, transform=__CanvasGraph__.getTransform()) {
+
+					pointMatrix = mult(figureTransform, pointMatrix);
 					pointMatrix = mult(transform, pointMatrix);
 
 
@@ -1514,17 +1572,71 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					}
 				}
 
+				static plotTextPoints(pointMatrix, pointArgs, figureTransform, transform=__CanvasGraph__.getTransform()) {
+
+					let original = pointMatrix;
+					pointMatrix = mult(figureTransform, pointMatrix);
+					pointMatrix = mult(transform, pointMatrix);
+
+					__CanvasGraph__.setColor(pointArgs.textColor);
+					let size = 1;
+					if (pointArgs.textResize) {
+						size = pointArgs.textSize * __CanvasGraph__.zoomY;
+					} else {
+						size = pointArgs.textSize;
+					}
+
+					let textOffset = pointArgs.textOffset;
+					let x_off = 0;
+					let y_off = 0;
+					if (__CanvasGraph__.correctionScale !== 0) {
+						x_off = textOffset[0] * __CanvasGraph__.zoomX * __CanvasGraph__.correctionScale;
+						y_off = textOffset[1] * __CanvasGraph__.zoomY * __CanvasGraph__.correctionScale;
+					}
+
+					let text = pointArgs.text;
+					console.log(text);
+					console.log(typeof text);
+					if (typeof text === "string") {
+						for (let i = 0; i < pointMatrix.columns; i++)
+							__CanvasGraph__.plotText(text, pointMatrix.get(0, i) + x_off, pointMatrix.get(1, i) - y_off, size);
+					} else {
+						for (let i = 0; i < pointMatrix.columns; i++) {
+							let x = original.get(0, i);
+							let y = original.get(1, i);
+							let msg = text(x, y);
+							console.log(msg);
+							__CanvasGraph__.plotText(msg, pointMatrix.get(0, i) + x_off, pointMatrix.get(1, i) - y_off, size);
+						}
+					}
+				}
+
 				static plotStoredPoints() {
 					let graphTransform = __CanvasGraph__.getTransform();
-					for (let item of __CanvasGraph__.renderBuffer) {
+
+					for (let item of __CanvasGraph__.setupBackTextRenderBuffer) {
 						let [pointMatrix, figure, args] = item;
-						pointMatrix = mult(figure.transform, pointMatrix);
-						__CanvasGraph__.plotPoints(pointMatrix, args, graphTransform);
+						__CanvasGraph__.plotTextPoints(pointMatrix, args, figure.transform, graphTransform);
+					}
+					for (let item of __CanvasGraph__.renderBackTextBuffer) {
+						let [pointMatrix, figure, args] = item;
+						__CanvasGraph__.plotTextPoints(pointMatrix, args, figure.transform, graphTransform);
 					}
 					for (let item of __CanvasGraph__.setupRenderBuffer) {
 						let [pointMatrix, figure, args] = item;
-						pointMatrix = mult(figure.transform, pointMatrix);
-						__CanvasGraph__.plotPoints(pointMatrix, args, graphTransform);
+						__CanvasGraph__.plotPoints(pointMatrix, args, figure.transform, graphTransform);
+					}
+					for (let item of __CanvasGraph__.renderBuffer) {
+						let [pointMatrix, figure, args] = item;
+						__CanvasGraph__.plotPoints(pointMatrix, args, figure.transform, graphTransform);
+					}
+					for (let item of __CanvasGraph__.setupFrontTextRenderBuffer) {
+						let [pointMatrix, figure, args] = item;
+						__CanvasGraph__.plotTextPoints(pointMatrix, args, figure.transform, graphTransform);
+					}
+					for (let item of __CanvasGraph__.renderFrontTextBuffer) {
+						let [pointMatrix, figure, args] = item;
+						__CanvasGraph__.plotTextPoints(pointMatrix, args, figure.transform, graphTransform);
 					}
 					Control.__plotControls(graphTransform);
 				}
@@ -1532,16 +1644,38 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				static storePlottedPoints(pointMatrix, figure, args) {
 					
 					let link = args["link"];
+					let content = [pointMatrix, figure, args];
 					if(link !== null) {
-						Control.__addControl(link, [pointMatrix, figure, args], true);
+						Control.__addControl(link, content, true);
 					} else {
 						if (__CanvasGraph__.useSetupBuffer) {
-							__CanvasGraph__.setupRenderBuffer.enqueue([pointMatrix, figure, args]);
+							let text = args["text"];
+							__CanvasGraph__.setupRenderBuffer.enqueue(content);
+							if (text !== null && text !== undefined) {
+								let textOrder = args["textOrder"];
+								if (textOrder === "front") {
+									__CanvasGraph__.setupFrontTextRenderBuffer.enqueue(content);
+								} else if (textOrder === "back") {
+									__CanvasGraph__.setupBackTextRenderBuffer.enqueue(content);
+								} else {
+									throw "textOrder arg must be either \"front\" or \"back\"";
+								}
+							}
 						} else {
-							__CanvasGraph__.renderBuffer.enqueue([pointMatrix, figure, args]);	
+							let text = args["text"];
+							__CanvasGraph__.renderBuffer.enqueue(content);
+							if (text !== null && text !== undefined) {
+								let textOrder = args["textOrder"];
+								if (textOrder === "front") {
+									__CanvasGraph__.renderFrontTextBuffer.enqueue(content);
+								} else if (textOrder === "back") {
+									__CanvasGraph__.renderBackTextBuffer.enqueue(content);
+								} else {
+									throw "textOrder arg must be either \"front\" or \"back\"";
+								}
+							}	
 						}
 					}
-					
 				}
 			}
 			__CanvasGraph__.__staticDeclarations__();
@@ -1672,16 +1806,28 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					__CanvasGraph__.storePlottedPoints(pointMatrix, this, pointArgs);
 				}
 
-				plotAxis(size=1) {
+				plotAxis(size=1, showNeg=true) {
+					let start = showNeg? -size : 0;
+					if (showNeg)
 					if (this.args.is3D) {
-						this.plotXYZ([0, size], [0, 0], [0, 0], {showPoints:false, showLines:true, lineColor: "red"});
-						this.plotXYZ([0, 0], [0, size], [0, 0], {showPoints:false, showLines:true, lineColor: "green"});
-						this.plotXYZ([0, 0], [0, 0], [0, size], {showPoints:false, showLines:true, lineColor: "blue"});
+						this.plotXYZ([start, size], [0, 0], [0, 0], {showPoints:false, showLines:true, lineColor: "red"});
+						this.plotXYZ([0, 0], [start, size], [0, 0], {showPoints:false, showLines:true, lineColor: "green"});
+						this.plotXYZ([0, 0], [0, 0], [start, size], {showPoints:false, showLines:true, lineColor: "blue"});
 					} else {
-						this.plotXY([0, size], [0, 0], {showPoints:false, showLines:true, lineColor: "red"});
-						this.plotXY([0, 0], [0, size], {showPoints:false, showLines:true, lineColor: "green"});
+						this.plotXY([start, size], [0, 0], {showPoints:false, showLines:true, lineColor: "red"});
+						this.plotXY([0, 0], [start, size], {showPoints:false, showLines:true, lineColor: "green"});
 					}
 				}
+
+				plotText(displayText, x, y=null, args={}) {
+					if (this.args.is3D)
+						throw "Cannot plot 2D text on a 3D figure";
+
+					let pointMatrix = Figure.get2DPointMatrix(x, y);
+					let pointArgs = __CanvasGraph__.getPointArgs(args, {showPoints:false, text: displayText});
+					__CanvasGraph__.storePlottedPoints(pointMatrix, this, pointArgs);
+				}
+
 			}
 			Object.freeze(Figure);
 			dyplot.Figure = Figure;
@@ -1905,7 +2051,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			DyPlot_Mutable.setup_code = setup_editor.getValue();
 			DyPlot_Mutable.update_code = update_editor.getValue();
 			try {
-				DyPlot_Private.__CanvasGraph__.setupRenderBuffer.clear();
+				DyPlot_Private.__CanvasGraph__.clearSetupBuffer();
 				DyPlot_Private.__CanvasGraph__.useSetupBuffer = true;
 				(function () {
 					let window   = undefined;
@@ -1913,6 +2059,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					let XMLHttpRequest = undefined;
 					let WebAssembly = undefined;
 					let setTimeout = undefined;
+					let print = undefined;
 					let jQuery = undefined;
 					let $        = undefined;
 					let setup_editor = undefined;
