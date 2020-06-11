@@ -1595,8 +1595,6 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					}
 
 					let text = pointArgs.text;
-					console.log(text);
-					console.log(typeof text);
 					if (typeof text === "string") {
 						for (let i = 0; i < pointMatrix.columns; i++)
 							__CanvasGraph__.plotText(text, pointMatrix.get(0, i) + x_off, pointMatrix.get(1, i) - y_off, size);
@@ -1605,7 +1603,6 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 							let x = original.get(0, i);
 							let y = original.get(1, i);
 							let msg = text(x, y);
-							console.log(msg);
 							__CanvasGraph__.plotText(msg, pointMatrix.get(0, i) + x_off, pointMatrix.get(1, i) - y_off, size);
 						}
 					}
