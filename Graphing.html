@@ -1945,6 +1945,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					let update_editor = ace.edit("update-editor");
 					update_editor.setValue(update_code);
 
+					Control.__resetControls();
 					DyPlot_Private.__onSetup__();
 					__CanvasGraph__._update();
 					
