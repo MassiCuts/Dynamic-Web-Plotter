@@ -169,7 +169,6 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 		// TODO :
 		// Add animation feature & argument
-		// Add plotting text (forground and background)
 		// Add plotting web images
 		// Add controls menu
 		// Allow "mouse scroll" to control zoom 
@@ -1342,7 +1341,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 				static init(onUpdate = null, onSetup = null) {
 					if (__CanvasGraph__._isInit)
-						throw "Canvas graph is already initialized"
+						throw new Error("Canvas graph is already initialized");
 					__CanvasGraph__._isInit = true;
 
 					__CanvasGraph__.canvas  = document.getElementById("graph");
@@ -1423,7 +1422,12 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 						return;
 					__CanvasGraph__.renderTriggered = false;
 					__CanvasGraph__.clearCanvas();
-					__CanvasGraph__.plotStoredPoints();
+					try {
+						__CanvasGraph__.plotStoredPoints();
+					} catch (e) {
+						Console.print("Arguments for a figure or plot are invalid:");
+						__printError__(e);
+					}
 				}
 
 				static clearCanvas() {
@@ -1527,14 +1531,14 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					    if (pointArgs.hasOwnProperty(key))
 							pointArgs[key] = defaultArgs[key];
 						else
-							throw 'The arg "' + key + '" is not defined.';
+							throw new Error('The arg "' + key + '" is not defined.');
 					}
 
 					for (let key in args) {
 					    if (pointArgs.hasOwnProperty(key))
 							pointArgs[key] = args[key];
 						else
-							throw 'The arg "' + key + '" is not defined.';
+							throw new Error('The arg "' + key + '" is not defined.');
 					}
 
 					return pointArgs;
@@ -1655,7 +1659,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 								} else if (textOrder === "back") {
 									__CanvasGraph__.setupBackTextRenderBuffer.enqueue(content);
 								} else {
-									throw "textOrder arg must be either \"front\" or \"back\"";
+									throw new Error("textOrder arg must be either \"front\" or \"back\"");
 								}
 							}
 						} else {
@@ -1668,7 +1672,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 								} else if (textOrder === "back") {
 									__CanvasGraph__.renderBackTextBuffer.enqueue(content);
 								} else {
-									throw "textOrder arg must be either \"front\" or \"back\"";
+									throw new Error("textOrder arg must be either \"front\" or \"back\"");
 								}
 							}	
 						}
@@ -1744,7 +1748,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					    if (this.args.hasOwnProperty(key))
 							this.args[key] = args[key];
 						else 
-							throw 'The arg "' + key + '" is not defined.';
+							throw new Error('The arg "' + key + '" is not defined.');
 					}
 					if (this.args.is3D) {
 						let projection = null;
@@ -1786,7 +1790,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 				plotXY(x, y=null, args={}) {
 					if (this.args.is3D)
-						throw "Cannot plot 2D points on a 3D figure";
+						throw new Error("Cannot plot 2D points on a 3D figure");
 
 					let pointMatrix = Figure.get2DPointMatrix(x, y);
 					let pointArgs = __CanvasGraph__.getPointArgs(args);
@@ -1795,9 +1799,9 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 				plotXYZ(x, y=null, z=null, args={}) {
 					if (!this.args.is3D)
-						throw "Cannot plot 3D points on a 2D figure";
+						throw new Error("Cannot plot 3D points on a 2D figure");
 					if("link" in args)
-						throw "Cannot link a control to 3D points";
+						throw new Error("Cannot link a control to 3D points");
 					let pointMatrix = Figure.get3DPointMatrix(x, y, z);
 					let pointArgs = __CanvasGraph__.getPointArgs(args);
 					__CanvasGraph__.storePlottedPoints(pointMatrix, this, pointArgs);
@@ -1818,7 +1822,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 				plotText(displayText, x, y=null, args={}) {
 					if (this.args.is3D)
-						throw "Cannot plot 2D text on a 3D figure";
+						throw new Error("Cannot plot 2D text on a 3D figure");
 
 					let pointMatrix = Figure.get2DPointMatrix(x, y);
 					let pointArgs = __CanvasGraph__.getPointArgs(args, {showPoints:false, text: displayText});
@@ -2067,7 +2071,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 						eval(
 							"DyPlot_Mutable.__update__ = function () {"
 								+ DyPlot_Mutable.update_code +
-							";};"
+							"\n};"
 						);
 					}
 				})();
