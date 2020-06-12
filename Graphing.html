@@ -1524,6 +1524,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 						textOrder: "front",
 						textSize: 30,
 						textResize: true,
+						textAlign: "left",
 						textOffset: [0, 0]
 					}
 
@@ -1598,6 +1599,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 						y_off = textOffset[1] * __CanvasGraph__.zoomY * __CanvasGraph__.correctionScale;
 					}
 
+					__CanvasGraph__.graph2D.textAlign = pointArgs.textAlign;
 					let text = pointArgs.text;
 					if (typeof text === "string") {
 						for (let i = 0; i < pointMatrix.columns; i++)
