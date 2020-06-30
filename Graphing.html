@@ -1076,7 +1076,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 
 			class CanvasMouseHandler {
-				constructor(canvas, defaultMoveHandler) {
+				constructor(canvas, defaultMoveHandler, scrollHandler) {
 					this.canvas = canvas;
 
 					this.mouseHandlerList = new LinkedList();
@@ -1102,6 +1102,10 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			        canvas.addEventListener("mouseout", function (e) {
 			            let rect = canvas.getBoundingClientRect();
 			            obj.up(e.clientX - rect.left, e.clientY - rect.top);
+			        }, false);
+			        canvas.addEventListener("wheel", function (e) {
+			            let rect = canvas.getBoundingClientRect();
+			            scrollHandler(e.clientX - rect.left, e.clientY - rect.top, e.deltaY);
 			        }, false);
 				}
 
@@ -1138,6 +1142,9 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 			class Controls {
 				static get(key) {
 					return Control.allControls[key];
+				}
+				static has(key) {
+					return key in Control.allControls;
 				}
 			} 
 			Object.freeze(Controls);
@@ -1236,7 +1243,14 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				}
 
 				checkInBounds (x, y) {
-					let [rad_x, rad_y] = this.getTransformedPoints(Control.CONTROL_RADIUS+x, y);
+					let radius;
+					if (this.args.pointResize) {
+						radius = this.args.pointRadius * __CanvasGraph__.zoomY;
+					} else {
+						radius = this.args.pointRadius;
+					}
+
+					let [rad_x, rad_y] = this.getTransformedPoints(radius+x, y);
 					[x, y] = this.getTransformedPoints(x, y);
 
 					let x_diff = rad_x - x;
@@ -1287,6 +1301,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 					__CanvasGraph__.zoomX  =  0;
 					__CanvasGraph__.zoomY  =  0;
+					__CanvasGraph__.scrollSensitivity  =  .5;
 					__CanvasGraph__.correctionScale = 1;
 					__CanvasGraph__.xOffset = 0;
 					__CanvasGraph__.yOffset = 0;
@@ -1361,6 +1376,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					__CanvasGraph__.updateTriggered = false;
 					__CanvasGraph__.renderTriggered = false;
 
+
 					let loop = async function () {
 						while (true) {
 							__CanvasGraph__.updateCanvasSize();	  
@@ -1374,6 +1390,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 				static __makeDefaultMouseHandler(canvas) {
 					let pi = {x:0, y:0};
+					
 					let onMove = (x, y) => {
 						let diffX = x - pi.x;
 						let diffY = y - pi.y;
@@ -1383,13 +1400,47 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 						pi.x = x;
 						pi.y = y;
 					};
+					
 					let onDown = (x, y) => {
 						pi.x = x;
 						pi.y = y;
 					};
+					
 					let doNothing = (x, y) => {};
+					
 					let defaultMouseHandler =  new __MouseHandler__(doNothing, onMove, onDown, doNothing);
-					return new CanvasMouseHandler(canvas, defaultMouseHandler);
+
+					let onScroll = (x, y, amt) => {
+
+						let zoomX = __CanvasGraph__.zoomX;
+						let zoomY = __CanvasGraph__.zoomY;
+						let factor = __CanvasGraph__.scrollSensitivity;
+
+						let zoomChange = 1 + (Math.abs(amt) * factor) / 100;
+						if ( amt < 0 ) {
+							zoomChange = 1 / zoomChange;
+						}
+
+						let xOffset = __CanvasGraph__.xOffset;
+						let yOffset = __CanvasGraph__.yOffset;
+
+						let location = vector(x, y, 1);
+						let transform = __CanvasGraph__.getInverseTransform();
+						let initialPoint = mult(transform, location);
+
+						__CanvasGraph__.setZoom(zoomX*zoomChange, zoomY*zoomChange);
+						
+						location = vector(x, y, 1);
+						transform = __CanvasGraph__.getInverseTransform();
+						let finalPoint = mult(transform, location);
+
+						
+						let deltaX = finalPoint.get(0, 0) - initialPoint.get(0, 0);
+						let deltaY = finalPoint.get(1, 0) - initialPoint.get(1, 0);
+
+						__CanvasGraph__.setTranslate(xOffset + deltaX, yOffset + deltaY);
+					};
+					return new CanvasMouseHandler(canvas, defaultMouseHandler, onScroll);
 				}
 
 				static setOnUpdate(onUpdate) {
@@ -1514,6 +1565,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 						showPoints:true,
 						pointColor:"black",
 						pointRadius: defaultRadius,
+						pointResize: false,
 						showLines:false,
 						closePath : false,
 						lineColor:"black",
@@ -1570,8 +1622,12 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 					if (pointArgs.showPoints) {
 						__CanvasGraph__.setColor(pointArgs.pointColor);
-						let radius = pointArgs.pointRadius;
-
+						let radius;
+						if (pointArgs.pointResize) {
+							radius = pointArgs.pointRadius * __CanvasGraph__.zoomY;
+						} else {
+							radius = pointArgs.pointRadius;
+						}
 						for (let i = 0; i < pointMatrix.columns; i++)
 							__CanvasGraph__.plotPoint(pointMatrix.get(0, i), pointMatrix.get(1, i), radius);
 					}
