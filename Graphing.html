@@ -1297,7 +1297,11 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 						return;
 					x = this.pointList[0][this.selectedPoint];
 					y = this.pointList[1][this.selectedPoint];
-					this.args.onclick({x: x, y: y, point: [x, y], i:this.selectedPoint});
+					try {
+						this.args.onclick({x: x, y: y, point: [x, y], i:this.selectedPoint});
+					} catch (e) {
+						DyPlot_Private.__printError__(e);
+					}
 					__CanvasGraph__.update();
 				}
 
