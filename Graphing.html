@@ -1056,7 +1056,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 
 			class __MouseHandler__ {
-				constructor(checkInBounds=null, onMove=null, onDown=null, onUp=null) {
+				constructor(checkInBounds=null, onMove=null, onDown=null, onUp=null, onClick=null) {
 					if ( checkInBounds !== null )
 						this.checkInBounds = checkInBounds;
 					if ( onMove !== null )
@@ -1065,11 +1065,14 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 						this.onUp = onUp;
 					if ( onDown !== null )
 						this.onDown = onDown;
+					if ( onClick !== null )
+						this.onClick = onClick;
 				}
 				checkInBounds(x, y) {}
 				onMove(x, y){}
 				onUp(x, y){}
 				onDown(x, y){}
+				onClick(x, y){}
 			}
 
 
@@ -1087,6 +1090,10 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 					let obj = this;
 
+					canvas.addEventListener("click", function (e) {
+			            let rect = canvas.getBoundingClientRect();
+			            obj.click(e.clientX - rect.left, e.clientY - rect.top);
+			        }, false);
 					canvas.addEventListener("mousemove", function (e) {
 			            let rect = canvas.getBoundingClientRect();
 			            obj.move(e.clientX - rect.left, e.clientY - rect.top);
@@ -1111,6 +1118,10 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 
 				get mouseHandlers() {
 					return this.mouseHandlerList;
+				}
+
+				click (x, y) {
+					this.selectedHandler.onClick(x, y);
 				}
 
 				move (x, y) {
@@ -1273,9 +1284,20 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				}
 
 				onMove(x, y) {
+					if (! this.args.movable)
+						return;
 					[x, y] = this.getTransformedPoints(x, y);
 					this.pointList[0][this.selectedPoint] = x;
 					this.pointList[1][this.selectedPoint] = y;
+					__CanvasGraph__.update();
+				}
+
+				onClick(x, y) {
+					if (this.args.onClick === null)
+						return;
+					x = this.pointList[0][this.selectedPoint];
+					y = this.pointList[1][this.selectedPoint];
+					this.args.onclick({x: x, y: y, point: [x, y], i:this.selectedPoint});
 					__CanvasGraph__.update();
 				}
 
@@ -1564,6 +1586,8 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 						link:null,
 						showPoints:true,
 						pointColor:"black",
+						onclick: null,
+						movable: true,
 						pointRadius: defaultRadius,
 						pointResize: false,
 						showLines:false,
