@@ -1298,11 +1298,12 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					x = this.pointList[0][this.selectedPoint];
 					y = this.pointList[1][this.selectedPoint];
 					try {
-						this.args.onclick({x: x, y: y, point: [x, y], i:this.selectedPoint});
+						let args = {x: x, y: y, point: [x, y], i:this.selectedPoint}
+						let callback = () => this.args.onclick(args);
+						__CanvasGraph__.update(callback);
 					} catch (e) {
 						DyPlot_Private.__printError__(e);
 					}
-					__CanvasGraph__.update();
 				}
 
 				get contents() {
@@ -1342,6 +1343,7 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					__CanvasGraph__.zoomHomeValues = [1, 1];
 					
 					__CanvasGraph__.onUpdate = null;
+					__CanvasGraph__.updateCallbacks = new LinkedList();
 					
 					__CanvasGraph__.renderTriggered = false;
 					__CanvasGraph__.updateTriggered = false;
@@ -1477,9 +1479,11 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					__CanvasGraph__.update();
 				}
 
-				static update() {				
+				static update(updateCallback=null) {				
 					__CanvasGraph__.updateTriggered = true;
 					__CanvasGraph__.renderTriggered = true;
+					if (updateCallback !== null)
+						__CanvasGraph__.updateCallbacks.addLast(updateCallback);
 				}
 
 				static render() {
@@ -1491,6 +1495,9 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 						return;
 					__CanvasGraph__.updateTriggered = false;
 					__CanvasGraph__.clearRenderBuffer();
+					for (let callback of __CanvasGraph__.updateCallbacks)
+						callback();
+					__CanvasGraph__.updateCallbacks.clear();
 					__CanvasGraph__.onUpdate();
 				}
 
