@@ -825,18 +825,22 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 					let output = new Matrix(1, matrix.columns);
 					for (let c = 0; c < matrix.columns; c++) {
 						let sum = 0;
-						for (let r = 0; r < matrix.rows; r++)
-							sum += matrix.get(r, c);
-						output.set(Math.sqrt(sum), 1, c);
+						for (let r = 0; r < matrix.rows; r++) {
+							let value = matrix.get(r, c);
+							sum += value * value;
+						}
+						output.set(Math.sqrt(sum), 0, c);
 					}
 					return output;
 				} else {
 					let output = new Matrix(matrix.rows, 1);
 					for (let r = 0; r < matrix.rows; r++) {
 						let sum = 0;
-						for (let c = 0; r < matrix.columns; c++);
-							sum += matrix.get(r, c);
-						output.set(Math.sqrt(sum), r, 1);
+						for (let c = 0; c < matrix.columns; c++) {
+							let value = matrix.get(r, c);
+							sum += value * value;
+						}
+						output.set(Math.sqrt(sum), r, 0);
 					}
 					return output;
 				}
@@ -854,11 +858,11 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				if (axis === 0) {
 					for (let r = 0; r < matrix.rows; r++)
 						for (let c = 0; c < matrix.columns; c++)
-							output.set(matrix.get(r, c) / mags.get(1, c)) ;
+							output.set(matrix.get(r, c) / mags.get(0, c), r, c) ;
 				} else {
 					for (let r = 0; r < matrix.rows; r++)
 						for (let c = 0; c < matrix.columns; c++)
-							output.set(matrix.get(r, c) / mags.get(r, 1)) ;
+							output.set(matrix.get(r, c) / mags.get(r, 0), r, c) ;
 				}
 				return output ;
 			}
