@@ -970,11 +970,19 @@ figure.plotXY(arrays[1], arrays[0], args);</div>
 				let s = 1 / Math.tan(fov/2)
 				let c1 = - (far + near) / (far - near)
 				let c2 = - 2 * far * near / (far - near)
+				// return new Matrix(4, 4,
+				// 		s, 0,  0,  0,
+				// 		0, s,  0,  0,
+				// 		0, 0, c1, c2,
+				// 		0, 0, -1,  0, 
+				// 	);
+
+				// Need to keep w = 1 for 2D translate to work
 				return new Matrix(4, 4,
 						s, 0,  0,  0,
 						0, s,  0,  0,
 						0, 0, c1, c2,
-						0, 0, -1,  0, 
+						0, 0, 0,  1, 
 					);
 			}
 
